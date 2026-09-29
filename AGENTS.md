@@ -1,7 +1,10 @@
 # AGENTS.md — guide for maintainers and their AI
 
 Entry point for anyone (human or AI coding agent) working on
-**personal-chatbots**. It states what the project is, the boundary you must not
+**personal-chatbots**. If you are adapting this template to a different owner,
+read `docs/TEMPLATE.md` first — in particular the warning about
+`content/tests.yaml`, which asserts facts about *this* owner and will fail once
+you change the sources. It states what the project is, the boundary you must not
 cross, and the loop you are expected to run.
 
 ## What this project is
