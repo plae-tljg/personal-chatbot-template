@@ -7,6 +7,7 @@ mechanism -- no tables, no history to maintain.
 
 from __future__ import annotations
 
+import dataclasses
 import unittest
 
 from personal_chatbots.content import load_test_cases
@@ -70,6 +71,29 @@ class SeededSuiteTest(BuiltCase):
     def test_every_case_declares_an_origin(self):
         for case in load_test_cases(ROOT / "content" / "tests.yaml"):
             self.assertTrue(case["origin"], f"{case['slug']} has no origin")
+
+    def test_the_suite_ignores_the_model_rung(self):
+        """A fluent answer must never be able to pass a frozen case.
+
+        Enabling the fallback in this repository turned three `refuses: true`
+        cases green-to-red in one command, because the model answered where the
+        structure had refused. The suite now runs structurally by construction.
+        """
+        from personal_chatbots.runner import structural_only
+
+        enabled = dataclasses.replace(
+            self.cfg,
+            data={**self.cfg.data, "runtime": {
+                **self.cfg.data["runtime"],
+                "ladder": ["knowledge", "entity", "search", "fallback", "refuse"],
+            }},
+        )
+        self.assertIn("fallback", enabled.ladder)
+        self.assertNotIn("fallback", structural_only(enabled).ladder)
+
+        cases = load_test_cases(ROOT / "content" / "tests.yaml")
+        outcomes = run_tests(enabled, cases, self.store)
+        self.assertEqual([o for o in outcomes if not o.passed], [])
 
     def test_run_tests_does_not_write_messages(self):
         cases = load_test_cases(ROOT / "content" / "tests.yaml")

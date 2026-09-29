@@ -64,6 +64,9 @@ def _serialize(answer: Answer) -> dict[str, Any]:
         # Surfaced because a rewrite the visitor cannot see is indistinguishable
         # from a guess.
         "refs": answer.refs,
+        # Follow-up questions this bot can actually answer, so a refusal always
+        # comes with a way forward.
+        "suggestions": answer.suggestions,
         # False for a fallback answer, and the client shows it.
         "deterministic": answer.source != "fallback",
         "tokens": 0 if answer.source != "fallback" else None,
@@ -121,7 +124,9 @@ def create_app(cfg: Config) -> Any:
             raise HTTPException(status_code=400, detail="question too long")
         runtime, store = cache.get()
         answer = runtime.ask_and_record(question, session_id=request.session_id)
-        return JSONResponse(_serialize(answer))
+        payload = _serialize(answer)
+        payload["fallback_error"] = runtime.last_fallback_error
+        return JSONResponse(payload)
 
     # -- sessions ------------------------------------------------------------
     #

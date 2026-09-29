@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import re
 import time
+import urllib.error
+import urllib.request
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable, Sequence
@@ -30,6 +32,10 @@ from .resolve import AliasIndex, Match, resolve, single_entity
 from .store import Citation, Entity, KnowledgeRow, Store
 from .textnorm import normalize, render, tokenize
 from .vocabulary import VocabularyError
+
+#: Sent on fallback requests. Some endpoints sit behind Cloudflare, which
+#: rejects urllib's default User-Agent with a 403 that looks like an auth error.
+USER_AGENT = "personal-chatbots/0.1 (+https://github.com/plae-tljg/personal-chatbot-template)"
 
 #: Words that carry no information when deciding what a question is *about*.
 STOPWORDS = frozenset(
@@ -218,6 +224,8 @@ class Runtime:
     cfg: Config
     index: AliasIndex
     rows: list[KnowledgeRow]
+    #: Why the last fallback call failed, if it did. Empty means "no failure".
+    last_fallback_error: str = ""
 
     @classmethod
     def from_store(cls, store: Store, cfg: Config) -> "Runtime":
@@ -331,9 +339,7 @@ class Runtime:
     def rung_fallback(self, tokens: list[str]) -> Answer | None:
         import json as _json
         import os
-        import urllib.error
-        import urllib.request
-
+        
         settings = self.cfg.fallback
         if not settings.get("enabled"):
             return None
@@ -356,7 +362,15 @@ class Runtime:
         request = urllib.request.Request(
             str(settings["endpoint"]),
             data=_json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {key}",
+                # Not decoration. Cloudflare fronts at least one of these
+                # endpoints and answers urllib's default "Python-urllib/3.x"
+                # User-Agent with 403 and error code 1010, which is
+                # indistinguishable from a bad key unless you print it.
+                "User-Agent": USER_AGENT,
+            },
         )
         try:
             with urllib.request.urlopen(  # noqa: S310 (configured endpoint)
@@ -368,9 +382,20 @@ class Runtime:
             # put it in `reasoning_content`, some inline it in the content as
             # <think>...</think>. Neither belongs in a chat bubble.
             text = _strip_reasoning(message.get("content") or "")
-        except Exception:  # noqa: BLE001
-            # A fallback that fails must fall through to refusal, not crash the
-            # request or pretend it answered.
+            self.last_fallback_error = ""
+        except urllib.error.HTTPError as exc:
+            # Kept, not swallowed. A fallback that fails must fall through to
+            # refusal -- but "the model is silently not being used" is the exact
+            # confusion this records its way out of.
+            detail = ""
+            try:
+                detail = exc.read().decode("utf-8", "replace")[:200]
+            except Exception:  # noqa: BLE001
+                pass
+            self.last_fallback_error = f"HTTP {exc.code} {exc.reason} {detail}".strip()
+            return None
+        except Exception as exc:  # noqa: BLE001
+            self.last_fallback_error = f"{type(exc).__name__}: {exc}"
             return None
         if not text:
             return None

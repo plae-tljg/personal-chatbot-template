@@ -10,6 +10,7 @@ is the whole regression-protection mechanism, and it needs no tables.
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -64,8 +65,30 @@ def _check(expect: dict[str, Any], answer: Any, outcome: Outcome) -> None:
             outcome.notes.append(f"no citation matching {needle!r}")
 
 
+def structural_only(cfg: Config) -> Config:
+    """The config with the model rung removed.
+
+    The frozen cases assert what the **structure** does. A model rung is not part
+    of that contract, and leaving it in has two failure modes, both of which
+    happened the moment the fallback was enabled in this repository:
+
+    * the suite needs a network call and a valid key to be green, so CI and every
+      offline run become flaky;
+    * worse, a fluent model answer *hides* a broken arrangement row -- a
+      `refuses: true` case passes for the wrong reason and nobody notices the
+      structure regressed.
+
+    So the suite runs what the tables alone can do, on purpose and visibly.
+    """
+    ladder = [rung for rung in cfg.ladder if rung != "fallback"]
+    if ladder == cfg.ladder:
+        return cfg
+    runtime_data = {**cfg.data.get("runtime", {}), "ladder": ladder}
+    return dataclasses.replace(cfg, data={**cfg.data, "runtime": runtime_data})
+
+
 def run_tests(cfg: Config, tests: list[dict[str, Any]], store: Store) -> list[Outcome]:
-    runtime = Runtime.from_store(store, cfg)
+    runtime = Runtime.from_store(store, structural_only(cfg))
     outcomes: list[Outcome] = []
     for case in tests:
         if case.get("status", "active") != "active":

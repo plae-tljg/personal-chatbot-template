@@ -206,6 +206,9 @@ function turnEl(question, answer, opts) {
       (opts && opts.live ? `<span class="badge">0 tokens</span>` : '') +
       (cites ? `<span>${cites}</span>` : '') +
     `</div>` +
+    (r.fallback_error && refused
+      ? `<div class="meta"><span class="badge refuse">model rung failed — ${esc(r.fallback_error.slice(0, 90))}</span></div>`
+      : '') +
     suggestions(answer.suggestions, question);
   return box;
 }

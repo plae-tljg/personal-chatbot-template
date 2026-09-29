@@ -72,6 +72,7 @@ def cmd_ask(args: argparse.Namespace) -> int:
             return _fail("no knowledge rows -- run `pc build` first")
         runtime = Runtime.from_store(store, cfg)
         answer = runtime.ask_and_record(args.question, session_id=args.session)
+        fallback_error = runtime.last_fallback_error
     print(answer.text)
     if not args.quiet:
         cites = ", ".join(c.key for c in answer.citations) or "-"
@@ -81,6 +82,10 @@ def cmd_ask(args: argparse.Namespace) -> int:
         print(f"  cites: {cites}")
         if answer.suggestions:
             print(f"  try:   {'  ·  '.join(answer.suggestions)}")
+        if fallback_error and answer.source == "refuse":
+            # Otherwise a broken key is indistinguishable from a model that had
+            # nothing to say, which is exactly how this looked for an hour.
+            print(f"  note:  the model rung failed — {fallback_error[:120]}")
     return 0
 
 
@@ -104,6 +109,9 @@ def cmd_inbox(args: argparse.Namespace) -> int:
 def cmd_test(args: argparse.Namespace) -> int:
     cfg = _prepare(args)
     cases = content_mod.load_test_cases(cfg.content_dir / "tests.yaml")
+    if "fallback" in cfg.ladder:
+        print("note: the frozen cases run without the model rung — they assert what the")
+        print("      structure does, so a fluent answer must not be able to pass them\n")
     with Store(cfg.db_path) as store:
         store.require_schema()
         if not store.knowledge_rows():
@@ -203,7 +211,11 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         answer = runtime.rung_fallback(__import__("personal_chatbots.textnorm", fromlist=["x"]).tokenize("ping"))
         elapsed = (time.perf_counter() - started) * 1000
         if answer is None:
-            print("\nping             no answer — see the api key line above")
+            print("\nping             FAILED")
+            if runtime.last_fallback_error:
+                print(f"                 {runtime.last_fallback_error[:150]}")
+            else:
+                print("                 no answer and no error — check the api key line above")
         else:
             print(f"\nping             ok in {elapsed:.0f} ms")
             print(f"                 {answer.text.splitlines()[0][:70]}")
@@ -615,6 +627,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # Before anything reads a key. Silent when there is no .env, and never
+    # overrides a value the shell already set.
+    from .env import load_dotenv
+
+    load_dotenv(Path(args.root).resolve())
     try:
         return int(args.func(args))
     except (ConfigError, ContentError, VocabularyError, SchemaTooOld) as exc:
