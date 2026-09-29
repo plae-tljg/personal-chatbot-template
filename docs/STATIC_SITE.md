@@ -152,6 +152,23 @@ was quicker than opening a PR in this repo.
 
 ---
 
+## Why the static site has no model fallback
+
+`pc serve` can be configured with a fallback rung; the static page cannot, and it
+is not an oversight.
+
+A browser-side call needs the API key **in the page**, where anyone can read it
+out of the network tab. There is no way to hide it in a static site: no server
+means no secret. The three honest options are
+
+1. keep the static page deterministic and let it refuse (`/ask` on the site),
+2. keep the fallback behind `pc serve`, which means running a server, or
+3. have the visitor bring their own key, stored in their own browser.
+
+This project takes (1) for the public site. It also happens to be the option that
+keeps the refusal rate measurable — a static page's refusals land in
+`localStorage`, not the inbox, so nothing is hidden either way.
+
 ## What the browser engine deliberately cannot do
 
 It answers, cites, and refuses. It cannot build, test, or maintain anything —

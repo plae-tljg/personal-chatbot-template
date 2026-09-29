@@ -160,10 +160,13 @@ function turnEl(question, answer, { live = false } = {}) {
     `<div class="q">${esc(question)}</div>` +
     `<div class="a${refused ? " refuse" : ""}">${esc(answer.text)}</div>` +
     `<div class="meta">` + refBadges(answer.refs) +
-      `<span class="badge ${refused ? "refuse" : "ok"}">${refused ? "refused — recorded" : "from tables"}</span>` +
+      `<span class="badge ${refused ? "refuse" : answer.source === "fallback" ? "ref" : "ok"}">${
+        refused ? "refused — recorded"
+        : answer.source === "fallback" ? "model — still recorded"
+        : "from tables"}</span>` +
       (answer.source ? `<span class="badge">${esc(answer.source)}${answer.matched ? ":" + esc(answer.matched) : ""}</span>` : "") +
       (answer.latency_ms != null ? `<span class="badge">${answer.latency_ms} ms</span>` : "") +
-      (live ? `<span class="badge">0 tokens</span>` : "") +
+      (live ? `<span class="badge">${answer.source === "fallback" ? "model call" : "0 tokens"}</span>` : "") +
       (answer.citations?.length ? `<span>${citations(answer.citations, live ? bot.data.bot.max_citations : 0)}</span>` : "") +
     `</div>`;
   return box;

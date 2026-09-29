@@ -75,7 +75,9 @@ def cmd_ask(args: argparse.Namespace) -> int:
     print(answer.text)
     if not args.quiet:
         cites = ", ".join(c.key for c in answer.citations) or "-"
-        print(f"\n  [{answer.source}:{answer.matched_slug or '-'}]  {answer.latency_ms:.2f} ms  · 0 tokens")
+        cost = "0 tokens" if answer.source != "fallback" else "model call"
+        print(f"\n  [{answer.source}:{answer.matched_slug or '-'}]  "
+              f"{answer.latency_ms:.2f} ms  · {cost}")
         print(f"  cites: {cites}")
     return 0
 

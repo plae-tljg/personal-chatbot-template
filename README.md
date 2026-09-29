@@ -170,13 +170,14 @@ static site — one command copies the compiled artifacts, with a `verify` for C
 | Thing | Lives in | Form | Written by | `pc build` does |
 |---|---|---|---|---|
 | Config | `content/bot.json` | offline | you | re-reads it |
-| Seed | `content/*.yaml` | **offline** | you **and the AI** (via PR) | **syncs into the db** |
+| Content | `content/*.yaml` | **offline** | you **and the AI** (via PR) | **syncs into the db** |
 | Data | `data/bot.db` | **online** | `pc build` | rebuilds it |
 | State | `data/bot.db` — `messages` | **online** | the runtime | never touches it |
 
 **`content/` is not part of the runtime.** The runtime reads the database and
-nothing else; the YAML is read once per build. The YAML is the same knowledge in
-its *editable* form — readable by a human, editable by an AI, diffable by git.
+nothing else; the YAML is read once per build. It is not a seed that the system
+grows past either — **it is the entire knowledge base**, in the form a human can
+read, an AI can edit, and git can diff. Nothing is learned at runtime.
 
 Syncing is idempotent: `knowledge` is upserted by `slug` (a removed slug becomes
 `archived`, never deleted, because past answers still reference it), and
@@ -200,8 +201,35 @@ machine and no new table.
 - **refuse** — honest "I don't know", recorded as `messages.unresolved = 1`.
 
 A rung never guesses: if a slot matches two entities, the rung does not match.
-There is no model rung — not a disabled flag, no code path
-(`docs/CONCERNS.md` C1).
+
+### Adding a model, if you want one
+
+There is no model rung by default. Not a flag that is off — no rung in the
+ladder. Turning one on is two lines in `content/bot.json`:
+
+```jsonc
+"ladder": ["knowledge", "entity", "search", "fallback", "refuse"],
+"fallback": { "enabled": true, "endpoint": "…", "model": "…", "api_key_env": "…" }
+```
+
+Any OpenAI-compatible endpoint works — OpenCode Zen's free pool, a local Ollama
+at `http://localhost:11434/v1/chat/completions`, or any provider.
+
+Measured: **~7 s and a model call, against ~0.2 ms for the rungs above it.** That
+gap is the entire reason the default is off.
+
+Two properties make it safe to enable:
+
+- **The turn is still recorded as unresolved.** A model answering is a real
+  answer to the visitor and a non-answer from the structure; `Answer.unresolved`
+  is deliberately not `Answer.refused`. Clearing the flag would answer the
+  visitor and blind the maintenance loop at the same time.
+- **It fails into a refusal.** Timeout, bad key, 500 — the ladder falls through
+  to `refuse`. The bot never gets worse because the model is down.
+
+The static site cannot have one: a browser-side call would expose the API key.
+The fallback is a server-side rung (`pc serve`), which is the honest split —
+`docs/STATIC_SITE.md`.
 
 `docs/LEVELS.md` defines L2 (Flow + Task: the bot remembers a conversation and
 hands a lead to a human) and L3 (Composite: one sentence containing several

@@ -104,6 +104,11 @@ class Config:
         return int(self.data["runtime"].get("max_citations", 3))
 
     @property
+    def fallback(self) -> dict:
+        """The model rung's configuration. Empty means it is not configured."""
+        return dict(self.data.get("runtime", {}).get("fallback", {}))
+
+    @property
     def refuse_template(self) -> str:
         return self.data.get("refuse_template", "I don't know.")
 

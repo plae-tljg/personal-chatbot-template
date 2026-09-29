@@ -37,7 +37,7 @@ exactly one home.
 | Thing | Lives in | Form | Written by | `pc build` does |
 |---|---|---|---|---|
 | **Config** | `content/bot.json` | offline | human | re-reads it |
-| **Seed** | `content/*.yaml` | **offline** | human **and AI** (via PR) | **syncs into the db** |
+| **Content** | `content/*.yaml` | **offline** | human **and AI** (via PR) | **syncs into the db** |
 | **Data** | `data/bot.db` | **online** | `pc build` | rebuilds it |
 | **State** | `data/bot.db` | **online** | the runtime | **never touches it** |
 
@@ -46,10 +46,16 @@ The load-bearing line is between *offline* and *online*:
 > **`content/` is not part of the runtime.** The runtime reads the database and
 > nothing else. The YAML is read exactly once per build, by `pc build`.
 
-The YAML is not a second truth; it is the same knowledge in its **editable
-form** — the form a human can read, an AI can edit, and git can diff. The
+The YAML is not a seed and not a second truth: it is **the whole knowledge
+base**, in its **editable form** — the form a human can read, an AI can edit, and git can diff. The
 database is the same knowledge in its **runtime form** — indexed, joinable,
 queryable in microseconds.
+
+Nothing is learned at runtime. The database does not accumulate knowledge as
+visitors ask questions — it is a projection of `content/`, rebuilt on every
+build. If it is not in the YAML, the bot does not know it, and no amount of
+traffic will change that. (What traffic produces is the *inbox*: evidence of what
+to add.)
 
 `pc build` syncs them, idempotently:
 
@@ -87,8 +93,13 @@ unchanged by it.
 1. knowledge   pattern match, slots resolve to live entities   -> answer + citations
 2. entity      exact name / alias hit                          -> card + citations
 3. search      FTS5 over documents                             -> passage + citation
-4. refuse      honest "I don't know", recorded as unresolved   -> the learning signal
+4. fallback    optional: a model answers the visitor, offline     -> model call
+5. refuse      honest "I don't know", recorded as unresolved   -> the learning signal
 ```
+
+Rung 4 is **not in the default ladder**. Adding `"fallback"` to
+`runtime.ladder` in `bot.json` is what turns it on (C1). It answers the visitor
+and still records the turn as unresolved, because those are two different jobs.
 
 Rules:
 

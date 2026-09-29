@@ -1,28 +1,45 @@
 {
   "_note": "一个 bot 的全部配置。为什么是文件而不是 settings 表：见 docs/CONCERNS.md C4。",
-
   "name": "Ask LKM",
   "tagline": "Ask about my public work. Answers come from tables, not from a model.",
   "default_locale": "en",
   "persona": "Direct, technical, no marketing voice. Say 'I don't know' when the tables don't know.",
-
   "owner_entity_key": "plae-tljg",
-
   "refuse_template": "I don't have that in my tables. I've written the question down.",
   "refuse_template_zh": "这个我的表里没有答案，我记下来了。",
-
   "runtime": {
     "_level": "1 = Facts only. 2 adds Flow + Task (live tables). 3 adds Composite (a rung, no tables). See docs/LEVELS.md -- the maintenance agent reads this field before deciding how to implement a request.",
     "level": 1,
-    "ladder": ["knowledge", "entity", "search", "refuse"],
+    "ladder": [
+      "knowledge",
+      "entity",
+      "search",
+      "refuse"
+    ],
     "max_citations": 3,
     "composite": {
       "enabled": false,
-      "split_on": [" and ", " also ", " plus ", "、", "还有"],
+      "split_on": [
+        " and ",
+        " also ",
+        " plus ",
+        "、",
+        "还有"
+      ],
       "max_parts": 3
+    },
+    "_ladder_note": "Rungs run in this order. 'fallback' is registered but NOT in the list: it is off by default, and adding it here is what turns it on. See docs/CONCERNS.md C1.",
+    "fallback": {
+      "_note": "Consulted only when every rung above refused. It answers the visitor; it does not close the gap -- the turn is still recorded as unresolved, because a model answering is not the same as the tables knowing.",
+      "enabled": false,
+      "endpoint": "https://opencode.ai/zen/v1/chat/completions",
+      "model": "space-bunny-free",
+      "api_key_env": "OPENCODE_API_KEY",
+      "timeout_ms": 12000,
+      "max_tokens": 220,
+      "max_context_entities": 6
     }
   },
-
   "build": {
     "sources": [
       "github:plae-tljg",

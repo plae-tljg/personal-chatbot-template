@@ -39,9 +39,13 @@ ACTION_KINDS: frozenset[str] = frozenset({"answer", "list", "refuse"})
 
 # The rungs the ladder may be built from. `composite` is L3 and not implemented;
 # naming it here means config can ask for it and get a clear error.
-RUNGS: frozenset[str] = frozenset({"knowledge", "entity", "search", "refuse", "composite"})
+RUNGS: frozenset[str] = frozenset(
+    {"knowledge", "entity", "search", "fallback", "refuse", "composite"}
+)
 
-IMPLEMENTED_RUNGS: frozenset[str] = frozenset({"knowledge", "entity", "search", "refuse"})
+IMPLEMENTED_RUNGS: frozenset[str] = frozenset(
+    {"knowledge", "entity", "search", "fallback", "refuse"}
+)
 
 # Fields of an entity that a template may interpolate.
 ENTITY_FIELDS: frozenset[str] = frozenset({"key", "name", "summary", "url", "entity_type"})

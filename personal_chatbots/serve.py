@@ -64,8 +64,9 @@ def _serialize(answer: Answer) -> dict[str, Any]:
         # Surfaced because a rewrite the visitor cannot see is indistinguishable
         # from a guess.
         "refs": answer.refs,
-        "deterministic": True,
-        "tokens": 0,
+        # False for a fallback answer, and the client shows it.
+        "deterministic": answer.source != "fallback",
+        "tokens": 0 if answer.source != "fallback" else None,
         # The honest boundary, sent to the client so the UI can say it out loud.
         "context_used": False,
     }

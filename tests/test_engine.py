@@ -112,3 +112,120 @@ class RecordingTest(BuiltCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FallbackRungTest(BuiltCase):
+    """The model rung is off by default, and answering does not close the gap.
+
+    Two properties matter and both are easy to get wrong: it must be invisible
+    unless the ladder asks for it, and when it does answer, the turn must still
+    be recorded as unresolved -- otherwise the fallback hides the only signal the
+    maintenance loop runs on.
+    """
+
+    def test_absent_from_the_default_ladder(self):
+        self.assertNotIn("fallback", self.cfg.ladder)
+        self.assertFalse(self.cfg.fallback.get("enabled"))
+
+    def test_disabled_returns_none(self):
+        self.assertIsNone(self.runtime.rung_fallback(["do", "you", "sell", "insurance"]))
+
+    def test_enabled_without_a_key_returns_none(self):
+        import os
+
+        from personal_chatbots.config import Config
+        from personal_chatbots.engine import Runtime
+
+        cfg = Config.load(self.cfg.root, db_path=self.cfg.db_path, cache_dir=self.cfg.cache_dir)
+        object.__setattr__(cfg, "data", {**cfg.data, "runtime": {
+            **cfg.data["runtime"],
+            "ladder": ["knowledge", "entity", "search", "fallback", "refuse"],
+            "fallback": {**cfg.fallback, "enabled": True, "api_key_env": "PC_TEST_MISSING_KEY"},
+        }})
+        os.environ.pop("PC_TEST_MISSING_KEY", None)
+        runtime = Runtime.from_store(self.store, cfg)
+        self.assertIsNone(runtime.rung_fallback(["do", "you", "sell", "insurance"]))
+
+    def test_an_answer_does_not_clear_the_unresolved_flag(self):
+        import os
+
+        from personal_chatbots.config import Config
+        from personal_chatbots.engine import Answer, Runtime
+
+        cfg = Config.load(self.cfg.root, db_path=self.cfg.db_path, cache_dir=self.cfg.cache_dir)
+        object.__setattr__(cfg, "data", {**cfg.data, "runtime": {
+            **cfg.data["runtime"],
+            "ladder": ["knowledge", "entity", "search", "fallback", "refuse"],
+            "fallback": {**cfg.fallback, "enabled": True, "api_key_env": "PC_TEST_KEY"},
+        }})
+        os.environ["PC_TEST_KEY"] = "test"
+
+        runtime = Runtime.from_store(self.store, cfg)
+        # A stub assigned on the instance shadows the bound method, so the ladder
+        # exercises the real ordering while the network stays out of the test.
+        runtime.rung_fallback = lambda tokens: Answer(
+            text="I do not have that, but I have passed it on.",
+            source="fallback", citations=[], matched_slug="model",
+        )
+
+        answer = runtime.ask_and_record("do you sell insurance?", session_id="fb")
+        self.assertEqual(answer.source, "fallback")
+        self.assertIn("passed it on", answer.text)
+
+        rows = self.store.session_messages("fb")
+        self.assertEqual(
+            rows[0]["unresolved"], 1,
+            "the tables still do not know this -- the fallback answers the visitor, "
+            "it does not close the gap",
+        )
+        self.assertEqual(rows[1]["resolution_source"], "fallback")
+
+    def test_the_system_prompt_forbids_invention_and_bounds_the_context(self):
+        joined = self.runtime._fallback_system_prompt(["- dsh-review (repo): a thing https://x"])
+        self.assertIn("do not know", joined)
+        self.assertIn("Never guess", joined)
+        self.assertIn("dsh-review", joined)
+
+        # an empty context must not produce a prompt that invites a guess
+        bare = self.runtime._fallback_system_prompt([])
+        self.assertNotIn("Facts you may use", bare)
+
+    def test_context_is_bounded_to_what_the_question_touched(self):
+        from personal_chatbots.textnorm import tokenize
+
+        lines, cited = self.runtime._fallback_context(tokenize("what is dsh-review about"), 6)
+        self.assertEqual(len(lines), 1)
+        self.assertEqual(cited[0].key, "plae-tljg/dsh-review")
+
+
+class ReasoningStripTest(unittest.TestCase):
+    """Reasoning models return their chain of thought; it must not reach a visitor.
+
+    Found by pointing the fallback at a real model: MiniMax-M2.7 inlined
+    <think>...</think> in `message.content`, and the first thing the CLI printed
+    was the model thinking out loud.
+    """
+
+    def strip(self, text):
+        from personal_chatbots.engine import _strip_reasoning
+
+        return _strip_reasoning(text)
+
+    def test_closed_think_block(self):
+        self.assertEqual(self.strip("<think>hmm</think>The answer is 4."), "The answer is 4.")
+
+    def test_thinking_variant_and_case(self):
+        self.assertEqual(self.strip("<THINKING>a</THINKING>done"), "done")
+
+    def test_unterminated_block_drops_everything_after_it(self):
+        # The model was cut off mid-thought: shipping a fragment would be worse
+        # than shipping nothing.
+        self.assertEqual(self.strip("<think>I should consider"), "")
+
+    def test_reasoning_tag_and_fenced_form(self):
+        self.assertEqual(self.strip("<reasoning>x</reasoning>ok"), "ok")
+        self.assertEqual(self.strip("```thinking\nnoise\n```answer"), "answer")
+
+    def test_a_plain_answer_is_untouched(self):
+        text = "dsh-review is a review tab for DeepSeek Harness."
+        self.assertEqual(self.strip(text), text)

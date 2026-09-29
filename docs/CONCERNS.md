@@ -29,9 +29,53 @@ Removing A is what makes the cost bounded. Batching B is what makes it small.
 And the trick that makes B rare is C2.
 
 **Reconsider if:** the refusal rate stays high after a few rounds *and* the
-unanswered questions are genuinely open-ended (not "we lack a row"). Then add a
-fallback rung — appended to `ladder` in `bot.json` — and measure it, rather than
-guessing.
+unanswered questions are genuinely open-ended (not "we lack a row"). **That
+trigger has now fired**, so the rung exists. It is off by default, and turning it
+on is one line:
+
+```jsonc
+// content/bot.json
+"runtime": {
+  "ladder": ["knowledge", "entity", "search", "fallback", "refuse"],
+  "fallback": {
+    "enabled": true,
+    "endpoint": "https://opencode.ai/zen/v1/chat/completions",
+    "model": "space-bunny-free",
+    "api_key_env": "OPENCODE_API_KEY"
+  }
+}
+```
+
+Everything OpenAI-compatible works, so the same shape covers a local Ollama
+(`http://localhost:11434/v1/chat/completions`), Zen's free pool, or any provider.
+Verified against a real model: the answer came back in ~7 s, against ~0.2 ms for
+the deterministic rungs — three and a half orders of magnitude, which is the
+whole cost argument in one number.
+
+**The property that makes it safe to enable:** an answer from the model is a real
+answer to the visitor and a *non-answer from the structure*, so the turn is still
+recorded as `unresolved`. `Answer.unresolved` is deliberately not
+`Answer.refused`. A fallback that cleared the flag would answer the visitor and
+blind the loop at the same time — it would look like progress while the inbox
+stopped growing.
+
+Three further things the implementation refuses to do:
+
+- **It is not a rung unless you ask.** `fallback` is absent from the default
+  ladder, so "is there a model on the request path?" is a readable property of
+  the config rather than a hidden behaviour.
+- **It cannot see the corpus.** The model gets only the entities the question
+  actually touched (capped), not the database. A fallback with everything in its
+  prompt is a RAG system wearing this project's clothes, and it would answer
+  things the tables cannot support.
+- **It fails into a refusal.** A timeout, a bad key, or a 500 returns `None` and
+  the ladder falls through to `refuse`. The bot never gets *worse* because the
+  model is down.
+
+Reasoning models need one more thing: MiniMax-M2.7 inlined `<think>...</think>`
+in `message.content`, and the first thing the CLI printed was the model thinking
+out loud. `_strip_reasoning` removes those wrappers, including the unterminated
+kind a truncated response leaves behind.
 
 ---
 

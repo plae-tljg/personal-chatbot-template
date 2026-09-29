@@ -191,8 +191,10 @@ function turnEl(question, answer, opts) {
     `<div class="a${refused ? ' refuse' : ''}">${esc(answer.text)}</div>` +
     `<div class="meta">` +
       (readAs ? readAs : '') +
-      `<span class="badge ${refused ? 'refuse' : 'ok'}">` +
-        `${refused ? 'refused — recorded' : 'from tables'}</span>` +
+      `<span class="badge ${refused ? 'refuse' : answer.source === 'fallback' ? 'ref' : 'ok'}">` +
+        `${refused ? 'refused — recorded'
+           : answer.source === 'fallback' ? 'model — still recorded'
+           : 'from tables'}</span>` +
       (answer.source ? `<span class="badge">${esc(answer.source)}${answer.matched ? ':' + esc(answer.matched) : ''}</span>` : '') +
       (answer.latency_ms != null ? `<span class="badge">${answer.latency_ms} ms</span>` : '') +
       (opts && opts.live ? `<span class="badge">0 tokens</span>` : '') +

@@ -18,6 +18,7 @@ Three properties this module is responsible for:
 
 from __future__ import annotations
 
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -71,7 +72,19 @@ class Answer:
 
     @property
     def refused(self) -> bool:
+        """The bot said "I don't know"."""
         return self.source == "refuse"
+
+    @property
+    def unresolved(self) -> bool:
+        """The tables could not answer this -- however the visitor was answered.
+
+        Deliberately not the same as `refused`. A fallback reply is a real answer
+        to the visitor and a non-answer from the structure, and it is the second
+        that the maintenance loop runs on. Clearing the flag because a model
+        spoke would hide the only signal the loop has.
+        """
+        return self.source in ("refuse", "fallback")
 
 
 # ---------------------------------------------------------------------------
@@ -302,6 +315,95 @@ class Runtime:
             slots={},
         )
 
+    # -- rung X: fallback (opt-in) --------------------------------------------
+    #
+    # Not in the default ladder. Adding "fallback" to runtime.ladder in bot.json
+    # is what turns it on, which keeps "is a model on the request path?" a
+    # readable property of the config rather than a hidden behaviour.
+    #
+    # The one property that matters: **answering the visitor is not the same as
+    # the tables knowing.** A fallback answer still records `unresolved = 1`, so
+    # the inbox keeps growing and the loop keeps learning. A fallback that
+    # cleared the flag would hide the very thing the loop runs on.
+
+    def rung_fallback(self, tokens: list[str]) -> Answer | None:
+        import json as _json
+        import os
+        import urllib.error
+        import urllib.request
+
+        settings = self.cfg.fallback
+        if not settings.get("enabled"):
+            return None
+        key = os.environ.get(str(settings.get("api_key_env", "")), "")
+        if not key:
+            return None
+        if not settings.get("endpoint"):
+            return None
+
+        question = " ".join(t for t in tokens if not t.startswith("{"))
+        context, cited = self._fallback_context(tokens, int(settings.get("max_context_entities", 6)))
+        payload = {
+            "model": settings.get("model", ""),
+            "max_tokens": int(settings.get("max_tokens", 220)),
+            "messages": [
+                {"role": "system", "content": self._fallback_system_prompt(context)},
+                {"role": "user", "content": question},
+            ],
+        }
+        request = urllib.request.Request(
+            str(settings["endpoint"]),
+            data=_json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
+        )
+        try:
+            with urllib.request.urlopen(  # noqa: S310 (configured endpoint)
+                request, timeout=float(settings.get("timeout_ms", 12000)) / 1000
+            ) as response:
+                body = _json.loads(response.read().decode("utf-8"))
+            message = body["choices"][0]["message"]
+            # A reasoning model returns its chain of thought too. Some providers
+            # put it in `reasoning_content`, some inline it in the content as
+            # <think>...</think>. Neither belongs in a chat bubble.
+            text = _strip_reasoning(message.get("content") or "")
+        except Exception:  # noqa: BLE001
+            # A fallback that fails must fall through to refusal, not crash the
+            # request or pretend it answered.
+            return None
+        if not text:
+            return None
+        return Answer(text=text, source="fallback", citations=cited, matched_slug="model")
+
+    def _fallback_context(self, tokens: list[str], limit: int) -> tuple[list[str], list[Citation]]:
+        """What the model is allowed to see: entities the question touched.
+
+        Deliberately not the whole database. A fallback with the corpus in its
+        prompt is a RAG system wearing this project's clothes, and it would
+        answer things the tables cannot support.
+        """
+        seen: dict[str, Entity] = {}
+        for match in self.index.matches_any(tokens):
+            seen.setdefault(match.entity.key, match.entity)
+        entities = list(seen.values())[:limit]
+        lines = [
+            f"- {e.name} ({e.entity_type}): {e.summary} {e.url}".strip()
+            for e in entities
+        ]
+        return lines, [_cite(e) for e in entities]
+
+    def _fallback_system_prompt(self, context: list[str]) -> str:
+        persona = self.cfg.data.get("persona", "")
+        lines = [
+            f"You are the assistant for {self.cfg.name}. {persona}".strip(),
+            "",
+            "Answer in one or two sentences. Use only the facts below. If they do "
+            "not contain the answer, say you do not know and that you have passed "
+            "the question on. Never guess a repository name, a number or a URL.",
+        ]
+        if context:
+            lines += ["", "Facts you may use:", *context]
+        return "\n".join(lines)
+
     # -- rung 4: refuse -------------------------------------------------------
 
     def rung_refuse(self, tokens: list[str]) -> Answer:
@@ -319,6 +421,7 @@ class Runtime:
             "knowledge": self.rung_knowledge,
             "entity": self.rung_entity,
             "search": self.rung_search,
+            "fallback": self.rung_fallback,
             "refuse": self.rung_refuse,
         }
         rungs: list[tuple[str, Callable[[list[str]], Answer | None]]] = []
@@ -383,11 +486,32 @@ class Runtime:
             source=answer.source,
             matched_slug=answer.matched_slug,
             citations=answer.citations,
-            unresolved=answer.refused,
+            unresolved=answer.unresolved,
             latency_ms=answer.latency_ms,
             refs=answer.refs,
         )
         return answer
+
+
+#: Chain-of-thought wrappers seen in the wild, stripped before the visitor sees
+#: anything. Non-greedy and case-insensitive; the last remaining block wins.
+_REASONING = [
+    re.compile(r"<think(?:ing)?>.*?</think(?:ing)?>", re.DOTALL | re.IGNORECASE),
+    re.compile(r"<reasoning>.*?</reasoning>", re.DOTALL | re.IGNORECASE),
+    re.compile(r"```(?:think|thinking|reasoning)\b.*?```", re.DOTALL | re.IGNORECASE),
+]
+
+
+def _strip_reasoning(text: str) -> str:
+    out = text
+    for pattern in _REASONING:
+        out = pattern.sub("", out)
+    # An unterminated block means the model was cut off mid-thought; everything
+    # after the opening tag is reasoning, so drop it rather than ship a fragment.
+    out = re.split(r"<think(?:ing)?>|<reasoning>", out, maxsplit=1, flags=re.IGNORECASE)[0]
+    # Some models prepend a bare "Thinking: ..." paragraph.
+    out = re.sub(r"^\s*(?:Thinking|Reasoning)\s*:.*?\n\s*\n", "", out, flags=re.DOTALL | re.IGNORECASE)
+    return out.strip()
 
 
 def _leftover(tokens: list[str], entity: Entity, index: AliasIndex) -> list[str]:
