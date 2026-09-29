@@ -161,7 +161,7 @@ baseline: green on `main`, red on your branch.
    `{stars}`, `{hours}` must resolve from an entity. This is the cost rule
    (`docs/CONCERNS.md` C2), not style.
 4. **Never copy a row to cover a variation.** Add a pattern to the existing row
-   instead. Ten rows cover 42 repositories; keep it that way.
+   instead. A dozen rows cover 42 repositories; keep it that way.
 5. **Never delete a test.** If its expectation is wrong, set
    `status: quarantined` and say why in `note`.
 6. **Never invent a repository, metric, or URL.** Use only what ingest produced

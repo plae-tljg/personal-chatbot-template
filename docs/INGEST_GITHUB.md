@@ -227,14 +227,16 @@ data-driven bot silently starts lying.**
 
 ## 8. The seed `knowledge` rows
 
-`content/knowledge.yaml` ships with ten rows. That is the human's one-time
-editorial act; after this, revisions arrive as pull requests.
+`content/knowledge.yaml` ships with 11 rows. The first batch was the
+human's one-time editorial act; `repo.author` was added later by a maintenance
+round, which is the point.
 
 | slug | pattern(s) | action |
 |---|---|---|
 | `owner.intro` | `who is {person}` / `what does {person} do` | answer, cites the profile |
 | `owner.accounts` | `which accounts does {person} publish under` | list over `account` via `owned_by` |
-| `repo.about` | `what is {repo} about` / `tell me about {repo}` | answer `{repo} — {summary}`, cites the repo |
+| `repo.about` | `what is {repo} about` (+ the `the {repo}` variants) | answer `{repo} — {repo.summary}`, cites the repo |
+| `repo.author` | `who made {repo}` / `who created {repo}` | list over `account` via `owned_by` |
 | `repo.list` | `what projects does {person} have` | list over `repo`, newest first, limit 10 |
 | `repo.ranked` | `what is your most starred repo` | list ordered by `attrs.stars`, limit 5 |
 | `repo.by_language` | `which projects use {language}` | list via `uses_language` |
@@ -243,13 +245,18 @@ editorial act; after this, revisions arrive as pull requests.
 | `contact` | `how do i contact {person}` | answer |
 | `meta.provenance` | `where did you get this` | answer, points at the sources |
 
-Ten rows for 42 repositories across four accounts. Multi-pattern rows are what
-keep the count down: adding a rephrase to an existing row costs one line, while
-adding a row costs a row plus a test plus future maintenance.
+11 rows for 42 repositories across four accounts, and 14 frozen
+cases pinning them. Multi-pattern rows are what keep the count down: adding a
+rephrase to an existing row costs a line, while adding a row costs a row plus a
+test plus future maintenance.
+
+`repo.author` is the interesting one, because a maintenance round added it and
+the shape was not obvious: attribution is a different question from description,
+and the answer comes from the `owned_by` link rather than a hardcoded name.
 
 There is no "unknown" row. Refusal is the last rung of the ladder, not data
 (`docs/DESIGN.md` §3) — that way it cannot be edited into answering something it
 has no grounds for.
 
-If ten rows cannot describe 42 repositories, the problem is the design of the
-rows, not the number of them.
+If 11 rows cannot describe 42 repositories, the problem is the design of
+the rows, not the number of them.

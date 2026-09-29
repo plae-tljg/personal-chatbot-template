@@ -5,7 +5,7 @@ out of `content/*.yaml` plus GitHub metadata. A coding agent maintains the
 content. Git is the review gate. **No model runs while serving.**
 
 **Status: v1 runs.** 42 repositories across four GitHub identities, 174 entities,
-11 knowledge rows, 14 seeded cases, 103 unit + invariant tests, and a browser
+11 knowledge rows, 16 seeded cases, 103 unit + invariant tests, and a browser
 engine that CI checks agrees with the Python one. Answers land in
 0.1–1 ms at zero tokens.
 
@@ -15,7 +15,8 @@ engine that CI checks agrees with the Python one. Answers land in
 git clone <this repo> personal-chatbots && cd personal-chatbots
 
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -U pip setuptools        # see the note below if you skip this
+pip install -e .
 
 # 1. build the database. Needs no network: it uses the committed API snapshot.
 python -m personal_chatbots build --offline --cache tests/fixtures
@@ -43,6 +44,18 @@ pc build --offline --cache tests/fixtures
 pc ask "which projects use Kotlin?"
 pc serve
 ```
+
+**If `pip install -e .` fails** with *"its build backend is missing the
+'build_editable' hook"*, your setuptools is older than 64 — Debian and Ubuntu
+ship 59. Either `pip install -U setuptools`, or skip the install entirely:
+
+```bash
+pip install pyyaml                   # the only hard dependency for the loop
+python -m personal_chatbots build --offline --cache tests/fixtures
+```
+
+`python -m personal_chatbots` needs no install step, which is why every command
+in `AGENTS.md` and the skills uses that form rather than `pc`.
 
 To pull fresh data from GitHub instead of the snapshot, drop `--offline
 --cache tests/fixtures`. That needs no token for four accounts, and
@@ -260,6 +273,12 @@ docs/ROADMAP.md            what is built, what waits, and the trigger for each
 
 Not RAG, not text-to-SQL, not autonomous, not no-code, not the company project.
 See `docs/DESIGN.md` §8.
+
+## License
+
+MIT — see `LICENSE`. The bot's content is public GitHub metadata plus
+hand-written judgement about public work; nothing here comes from an employer
+project (`docs/CONCERNS.md` C10).
 
 ## Related
 

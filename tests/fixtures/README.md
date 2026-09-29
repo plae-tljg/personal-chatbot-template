@@ -13,6 +13,13 @@ Why snapshot instead of mocking:
   A test suite that depends on it is a test suite that fails on a busy afternoon.
 - **Determinism.** Same input, same database, same answers, every run.
 
+**A note on content:** the README fixtures are verbatim snapshots of public
+GitHub READMEs, so they contain whatever those READMEs contain — including the
+author's own local paths (``/home/...``) and placeholder API keys like
+``sk-xxxx``. Nothing here is private: all of it is already published on GitHub.
+They are kept verbatim because scrubbing them would make the corpus tidier than
+reality, and the tests exist to survive reality.
+
 The layout mirrors `data/cache`, which is why the commands point at
 `tests/fixtures` (the parent) rather than at `tests/fixtures/github`:
 

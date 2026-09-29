@@ -1,20 +1,31 @@
 [build-system]
-requires = ["setuptools>=61"]
+# >=64 for the PEP 660 build_editable hook. Debian/Ubuntu ship setuptools 59,
+# which fails `pip install -e .` with "missing the 'build_editable' hook".
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "personal-chatbots"
 version = "0.1.0"
 description = "A chatbot that answers from tables, maintained by a coding agent through pull requests"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["chatbot", "ai-maintenance", "sqlite", "deterministic", "agent"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Communications :: Chat",
+]
 dependencies = [
   "fastapi>=0.110",
   "uvicorn>=0.27",
   "PyYAML>=6.0",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest>=8"]
+# No dev extra on purpose: the tests are stdlib unittest, so a contributor needs
+# nothing beyond the three runtime dependencies.
 
 [project.scripts]
 pc = "personal_chatbots.cli:main"

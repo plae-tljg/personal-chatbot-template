@@ -101,3 +101,20 @@
   question: "which projects use Rust?"   # verbatim from the inbox
   expect:
     refuses: true
+
+# ---- 能力问句：repo.about 多一个入口，答案仍取自仓库自己的 summary ----
+# summary 就是 "App to do finance management, completely offline"，
+# 所以这不是新事实，只是一个新问法落到已有的行上（不新增行）。
+- slug: repo.about.finance-offline
+  question: "can I use the finance app offline?"   # verbatim from the inbox
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-tljg/Finance-Management-App" }
+    answer_contains: ["offline"]
+    cites: ["plae-tljg/Finance-Management-App"]
+
+# ---- 易混负例：offline 入口需要先解析出一个仓库；没有仓库就拒答 ----
+- slug: confusable.offline-needs-a-repo
+  question: "can I use it offline?"
+  expect:
+    refuses: true

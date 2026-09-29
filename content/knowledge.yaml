@@ -45,6 +45,12 @@
     - "what is the {repo} about"
     - "tell me about the {repo}"
     - "what does the {repo} do"
+    # 能力问句：访客问 "can I use the finance app offline?"，而仓库自己的 summary
+    # 就写着 "completely offline"。答案还是同一句描述，多一个入口不新增行。
+    - "can i use {repo} offline"
+    - "can i use the {repo} offline"
+    - "does {repo} work offline"
+    - "does the {repo} work offline"
   slots: { repo: repo }
   action:
     kind: answer

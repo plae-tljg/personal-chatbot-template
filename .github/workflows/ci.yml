@@ -28,7 +28,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: install
-        run: pip install -e ".[dev]"
+        run: pip install -e .
 
       - name: build from the fixture (offline)
         run: python -m personal_chatbots build --offline --cache tests/fixtures

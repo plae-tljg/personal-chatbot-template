@@ -5,7 +5,7 @@ Current state: **v1 is built and running.**
 ```
 python -m personal_chatbots build --offline --cache tests/fixtures
 python -m personal_chatbots ask "what is dsh-review about?"
-python -m personal_chatbots test          # 8/8 seeded cases
+python -m personal_chatbots test          # 14 frozen cases
 python -m unittest discover -s tests -t . # 82 tests
 python -m personal_chatbots serve
 python -m personal_chatbots sessions      # list or replay conversations
@@ -44,7 +44,7 @@ Two bugs that only appeared against a running server, both now covered by tests:
   without the fix, so it is not a vacuous test.
 
 What the numbers currently look like: 42 repositories across four accounts,
-174 live entities, 10 knowledge rows, 244 links, 10 READMEs, 0.1-1 ms per answer,
+175 live entities, 11 knowledge rows, 249 links, 10 READMEs, 0.1-1 ms per answer,
 0 tokens.
 
 The guiding rule stays: **only build what is needed now.** If adding something
