@@ -68,18 +68,6 @@ which is exactly what a visitor needs.
   it from the same content the Python build uses, so it cannot drift from what
   `pc test` verified.
 
-## Using it from another repository
-
-`docs/STATIC_SITE.md` covers this in full. The short form:
-
-```bash
-python -m personal_chatbots export --bundle /path/to/site/public/bot
-```
-
-writes `data.json`, `engine.js` and `CONTRACT.md` — the compiled form of
-`content/*.yaml`, ready to copy. There is exactly one source of truth and it is
-not the bundle.
-
 ## Deploying
 
 Anything that serves files: GitHub Pages, Cloudflare Pages, Netlify, S3, a

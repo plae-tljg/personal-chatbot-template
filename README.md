@@ -162,6 +162,8 @@ python -m personal_chatbots export && node web/parity.mjs
 
 `web/README.md` has the honest list of what differs (sessions live in
 `localStorage`, search has no FTS index, `data.json` is a build artifact).
+`docs/STATIC_SITE.md` is the integration guide for putting it on an existing
+static site — one command copies the compiled artifacts, with a `verify` for CI.
 
 ## Four things, four homes
 
@@ -265,6 +267,7 @@ tests/                     unit + invariant tests, and the API fixtures
 docs/CONCERNS.md           the doubts and their answers -- start here
 docs/LEVELS.md             Facts / Flow / Task / Composite, and levels L1-L3
 docs/DESIGN.md             why: the four homes, the ladder, the seams
+docs/STATIC_SITE.md        putting the bot on an existing static site (Astro etc.)
 docs/INGEST_GITHUB.md      how entities get built from 4 GitHub identities
 docs/ROADMAP.md            what is built, what waits, and the trigger for each
 ```

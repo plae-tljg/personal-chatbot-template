@@ -305,7 +305,12 @@ class Runtime:
     # -- rung 4: refuse -------------------------------------------------------
 
     def rung_refuse(self, tokens: list[str]) -> Answer:
-        return Answer(text=self.cfg.refuse_template, source="refuse", citations=[])
+        # A bilingual site serves one engine, so the refusal follows the
+        # question's language rather than the config's default.
+        zh = any("\u4e00" <= ch <= "\u9fff" for token in tokens for ch in token)
+        template = (self.cfg.data.get("refuse_template_zh") or self.cfg.refuse_template) if zh \
+            else self.cfg.refuse_template
+        return Answer(text=template, source="refuse", citations=[])
 
     # -- the ladder -----------------------------------------------------------
 

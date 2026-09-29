@@ -1,0 +1,4688 @@
+{
+ "schema_version": 4,
+ "generated_at": "2026-09-29T22:30:04",
+ "bot": {
+  "name": "Ask LKM",
+  "tagline": "Ask about my public work. Answers come from tables, not from a model.",
+  "default_locale": "en",
+  "refuse_template": "I don't have that in my tables. I've written the question down.",
+  "refuse_template_zh": "这个我的表里没有答案，我记下来了。",
+  "ladder": [
+   "knowledge",
+   "entity",
+   "search",
+   "refuse"
+  ],
+  "level": 1,
+  "max_citations": 3
+ },
+ "knowledge": [
+  {
+   "slug": "owner.intro",
+   "locale": "",
+   "patterns": [
+    "who is {person}",
+    "what does {person} do",
+    "tell me about {person}"
+   ],
+   "slots": {
+    "person": "person"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "kind": "answer",
+    "template": "{person} — {person.summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "owner.accounts",
+   "locale": "",
+   "patterns": [
+    "which accounts does {person} publish under",
+    "how many github accounts do you have",
+    "where do you publish"
+   ],
+   "slots": {
+    "person": "person"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "direction": "in",
+    "entity_type": "account",
+    "kind": "list",
+    "link_type": "owned_by",
+    "template": "{name} — {summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "repo.about",
+   "locale": "",
+   "patterns": [
+    "what is {repo} about",
+    "tell me about {repo}",
+    "what does {repo} do",
+    "what is the {repo} about",
+    "tell me about the {repo}",
+    "what does the {repo} do",
+    "can i use {repo} offline",
+    "can i use the {repo} offline",
+    "does {repo} work offline",
+    "does the {repo} work offline"
+   ],
+   "slots": {
+    "repo": "repo"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "kind": "answer",
+    "template": "{repo} — {repo.summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "repo.author",
+   "locale": "",
+   "patterns": [
+    "who made {repo}",
+    "who made the {repo}",
+    "who created {repo}",
+    "who wrote {repo}",
+    "who owns {repo}"
+   ],
+   "slots": {
+    "repo": "repo"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "direction": "out",
+    "entity_type": "account",
+    "kind": "list",
+    "link_type": "owned_by",
+    "template": "{name}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "repo.list",
+   "locale": "",
+   "patterns": [
+    "what projects does {person} have",
+    "list your work",
+    "what have you built"
+   ],
+   "slots": {
+    "person": "person"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "entity_type": "repo",
+    "kind": "list",
+    "limit": 10,
+    "order_by": "attrs.stars desc",
+    "template": "{name} ({attrs.stars}★) — {summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "repo.by_language",
+   "locale": "",
+   "patterns": [
+    "which projects use {language}",
+    "what have you written in {language}"
+   ],
+   "slots": {
+    "language": "language"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "direction": "in",
+    "entity_type": "repo",
+    "kind": "list",
+    "link_type": "uses_language",
+    "template": "{name} ({attrs.language}) — {summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "repo.by_topic",
+   "locale": "",
+   "patterns": [
+    "what have you built with {topic}",
+    "do you have anything for {topic}",
+    "do you have anything about {topic}"
+   ],
+   "slots": {
+    "topic": "topic"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "direction": "in",
+    "entity_type": "repo",
+    "kind": "list",
+    "link_type": "tagged",
+    "template": "{name} — {summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "project.about",
+   "locale": "",
+   "patterns": [
+    "what is the {project} project",
+    "what is in {project}"
+   ],
+   "slots": {
+    "project": "project"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "direction": "out",
+    "entity_type": "repo",
+    "kind": "list",
+    "link_type": "includes",
+    "template": "{name} — {summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "contact",
+   "locale": "",
+   "patterns": [
+    "how do i contact {person}",
+    "how to hire {person}",
+    "how do i reach you"
+   ],
+   "slots": {
+    "person": "person"
+   },
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "kind": "answer",
+    "template": "Open an issue on any repo, or use the links on {person.url}."
+   },
+   "citations": []
+  },
+  {
+   "slug": "repo.ranked",
+   "locale": "",
+   "patterns": [
+    "what is your most starred repo",
+    "what is your most popular project",
+    "which repo has the most stars"
+   ],
+   "slots": {},
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "entity_type": "repo",
+    "kind": "list",
+    "limit": 5,
+    "order_by": "attrs.stars desc",
+    "template": "{name} ({attrs.stars}★) — {summary}"
+   },
+   "citations": []
+  },
+  {
+   "slug": "meta.provenance",
+   "locale": "",
+   "patterns": [
+    "where did you get this",
+    "how do you know that",
+    "what is your source"
+   ],
+   "slots": {},
+   "match": {
+    "exclude": [],
+    "require": []
+   },
+   "action": {
+    "kind": "answer",
+    "template": "From the public GitHub metadata and READMEs of the repositories listed above."
+   },
+   "citations": []
+  }
+ ],
+ "entities": [
+  {
+   "key": "plae-tljg",
+   "type": "account",
+   "name": "plaetljg",
+   "summary": "Primary account: the personal site, the DeepSeek Harness review plugin, and MaaFwPhoneAI.",
+   "aliases": [
+    "plae tljg",
+    "plaetljg"
+   ],
+   "attrs": {
+    "created_at": "2021-12-23",
+    "followers": 10,
+    "public_repos": 7
+   },
+   "url": "https://github.com/plae-tljg"
+  },
+  {
+   "key": "plae-tljg/plae-tljg.github.io",
+   "type": "repo",
+   "name": "plae-tljg.github.io",
+   "summary": "LKM personal page",
+   "aliases": [
+    "plae tljg github io",
+    "plae tljg plae tljg github io",
+    "plaetljggithubio"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-11-12",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1094885337,
+    "homepage": "https://plae-tljg.github.io/",
+    "language": "Astro",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-09-27",
+    "size_kb": 4664,
+    "stars": 1,
+    "topics": [
+     "lkm",
+     "personal-webpage",
+     "web"
+    ]
+   },
+   "url": "https://github.com/plae-tljg/plae-tljg.github.io"
+  },
+  {
+   "key": "language:astro",
+   "type": "language",
+   "name": "Astro",
+   "summary": "Projects written in Astro.",
+   "aliases": [
+    "astro"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:lkm",
+   "type": "topic",
+   "name": "lkm",
+   "summary": "Projects tagged lkm.",
+   "aliases": [
+    "lkm"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:personal-webpage",
+   "type": "topic",
+   "name": "personal-webpage",
+   "summary": "Projects tagged personal-webpage.",
+   "aliases": [
+    "personal webpage",
+    "personalwebpage"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:web",
+   "type": "topic",
+   "name": "web",
+   "summary": "Projects tagged web.",
+   "aliases": [
+    "web"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-tljg/dsh-review",
+   "type": "repo",
+   "name": "dsh-review",
+   "summary": "Review Tab for DeepSeek Harness, mimic traditional Coding Agents for Changes Tracking",
+   "aliases": [
+    "dsh review",
+    "plae tljg dsh review",
+    "dshreview"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-09-21",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1379442143,
+    "homepage": "",
+    "language": "JavaScript",
+    "license": "NOASSERTION",
+    "open_issues": 0,
+    "pushed_at": "2026-09-25",
+    "size_kb": 1408,
+    "stars": 3,
+    "topics": [
+     "addon",
+     "deepseek",
+     "deepseek-harness",
+     "js",
+     "plugin",
+     "web"
+    ]
+   },
+   "url": "https://github.com/plae-tljg/dsh-review"
+  },
+  {
+   "key": "language:javascript",
+   "type": "language",
+   "name": "JavaScript",
+   "summary": "Projects written in JavaScript.",
+   "aliases": [
+    "java script",
+    "javascript"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:addon",
+   "type": "topic",
+   "name": "addon",
+   "summary": "Projects tagged addon.",
+   "aliases": [
+    "addon"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:deepseek",
+   "type": "topic",
+   "name": "deepseek",
+   "summary": "Projects tagged deepseek.",
+   "aliases": [
+    "deepseek"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:deepseek-harness",
+   "type": "topic",
+   "name": "deepseek-harness",
+   "summary": "Projects tagged deepseek-harness.",
+   "aliases": [
+    "deepseek harness",
+    "deepseekharness"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:js",
+   "type": "topic",
+   "name": "js",
+   "summary": "Projects tagged js.",
+   "aliases": [],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:plugin",
+   "type": "topic",
+   "name": "plugin",
+   "summary": "Projects tagged plugin.",
+   "aliases": [
+    "plugin"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-tljg/MaaFwPhoneAI",
+   "type": "repo",
+   "name": "MaaFwPhoneAI",
+   "summary": "A general-purpose Android GUI layer built on MaaFramework.",
+   "aliases": [
+    "maa fw phone ai",
+    "plae tljg maa fw phone ai",
+    "maafwphoneai"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-09-20",
+    "default_branch": "main",
+    "fork": true,
+    "forks": 0,
+    "github_id": 1378001744,
+    "homepage": "",
+    "language": "Kotlin",
+    "license": "AGPL-3.0",
+    "open_issues": 0,
+    "pushed_at": "2026-09-20",
+    "size_kb": 23270,
+    "stars": 3,
+    "topics": [
+     "android",
+     "android-app",
+     "maafw",
+     "phoneai"
+    ]
+   },
+   "url": "https://github.com/plae-tljg/MaaFwPhoneAI"
+  },
+  {
+   "key": "language:kotlin",
+   "type": "language",
+   "name": "Kotlin",
+   "summary": "Projects written in Kotlin.",
+   "aliases": [
+    "kotlin"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:android",
+   "type": "topic",
+   "name": "android",
+   "summary": "Projects tagged android.",
+   "aliases": [
+    "android"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:android-app",
+   "type": "topic",
+   "name": "android-app",
+   "summary": "Projects tagged android-app.",
+   "aliases": [
+    "android app",
+    "androidapp"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:maafw",
+   "type": "topic",
+   "name": "maafw",
+   "summary": "Projects tagged maafw.",
+   "aliases": [
+    "maafw"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:phoneai",
+   "type": "topic",
+   "name": "phoneai",
+   "summary": "Projects tagged phoneai.",
+   "aliases": [
+    "phoneai"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-tljg/Finance-Management-App",
+   "type": "repo",
+   "name": "Finance-Management-App",
+   "summary": "App to do finance management, completely offline",
+   "aliases": [
+    "finance management app",
+    "plae tljg finance management app",
+    "financemanagementapp",
+    "finance app",
+    "fma"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-04-21",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 970039685,
+    "homepage": "",
+    "language": "TypeScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-09-10",
+    "size_kb": 12411,
+    "stars": 8,
+    "topics": [
+     "android-app",
+     "finance-management",
+     "localstorage",
+     "phone",
+     "rapid-development",
+     "react",
+     "react-native",
+     "template",
+     "typescript"
+    ]
+   },
+   "url": "https://github.com/plae-tljg/Finance-Management-App"
+  },
+  {
+   "key": "language:typescript",
+   "type": "language",
+   "name": "TypeScript",
+   "summary": "Projects written in TypeScript.",
+   "aliases": [
+    "type script",
+    "typescript"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:finance-management",
+   "type": "topic",
+   "name": "finance-management",
+   "summary": "Projects tagged finance-management.",
+   "aliases": [
+    "finance management",
+    "financemanagement"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:localstorage",
+   "type": "topic",
+   "name": "localstorage",
+   "summary": "Projects tagged localstorage.",
+   "aliases": [
+    "localstorage"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:phone",
+   "type": "topic",
+   "name": "phone",
+   "summary": "Projects tagged phone.",
+   "aliases": [
+    "phone"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:rapid-development",
+   "type": "topic",
+   "name": "rapid-development",
+   "summary": "Projects tagged rapid-development.",
+   "aliases": [
+    "rapid development",
+    "rapiddevelopment"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:react",
+   "type": "topic",
+   "name": "react",
+   "summary": "Projects tagged react.",
+   "aliases": [
+    "react"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:react-native",
+   "type": "topic",
+   "name": "react-native",
+   "summary": "Projects tagged react-native.",
+   "aliases": [
+    "react native",
+    "reactnative"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:template",
+   "type": "topic",
+   "name": "template",
+   "summary": "Projects tagged template.",
+   "aliases": [
+    "template"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:typescript",
+   "type": "topic",
+   "name": "typescript",
+   "summary": "Projects tagged typescript.",
+   "aliases": [
+    "typescript"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-tljg/designer-is-dad",
+   "type": "repo",
+   "name": "designer-is-dad",
+   "summary": "Designer is dad, customer is little bro",
+   "aliases": [
+    "designer is dad",
+    "plae tljg designer is dad",
+    "designerisdad"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-08-22",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1342786404,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-08-22",
+    "size_kb": 59,
+    "stars": 3,
+    "topics": [
+     "game",
+     "game-2d",
+     "game-of-life",
+     "python"
+    ]
+   },
+   "url": "https://github.com/plae-tljg/designer-is-dad"
+  },
+  {
+   "key": "language:python",
+   "type": "language",
+   "name": "Python",
+   "summary": "Projects written in Python.",
+   "aliases": [
+    "python"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:game",
+   "type": "topic",
+   "name": "game",
+   "summary": "Projects tagged game.",
+   "aliases": [
+    "game"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:game-2d",
+   "type": "topic",
+   "name": "game-2d",
+   "summary": "Projects tagged game-2d.",
+   "aliases": [
+    "game 2d",
+    "game2d"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:game-of-life",
+   "type": "topic",
+   "name": "game-of-life",
+   "summary": "Projects tagged game-of-life.",
+   "aliases": [
+    "game of life",
+    "gameoflife"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:python",
+   "type": "topic",
+   "name": "python",
+   "summary": "Projects tagged python.",
+   "aliases": [
+    "python"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-tljg/Math-Learning-Path",
+   "type": "repo",
+   "name": "Math-Learning-Path",
+   "summary": "",
+   "aliases": [
+    "math learning path",
+    "plae tljg math learning path",
+    "mathlearningpath"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-11-13",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1095491507,
+    "homepage": "https://plae-tljg.github.io/Math-Learning-Path/",
+    "language": "Astro",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-05-03",
+    "size_kb": 5443,
+    "stars": 0,
+    "topics": [
+     "learning",
+     "math",
+     "summary",
+     "web"
+    ]
+   },
+   "url": "https://github.com/plae-tljg/Math-Learning-Path"
+  },
+  {
+   "key": "topic:learning",
+   "type": "topic",
+   "name": "learning",
+   "summary": "Projects tagged learning.",
+   "aliases": [
+    "learning"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:math",
+   "type": "topic",
+   "name": "math",
+   "summary": "Projects tagged math.",
+   "aliases": [
+    "math"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:summary",
+   "type": "topic",
+   "name": "summary",
+   "summary": "Projects tagged summary.",
+   "aliases": [
+    "summary"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-tljg/plae-tljg",
+   "type": "repo",
+   "name": "plae-tljg",
+   "summary": "The GitHub profile README.",
+   "aliases": [
+    "plae tljg",
+    "plae tljg plae tljg",
+    "plaetljg"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-23",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1121445767,
+    "homepage": "",
+    "language": "",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-02-20",
+    "size_kb": 18804,
+    "stars": 1,
+    "topics": [
+     "profile",
+     "readme"
+    ]
+   },
+   "url": "https://github.com/plae-tljg/plae-tljg"
+  },
+  {
+   "key": "topic:profile",
+   "type": "topic",
+   "name": "profile",
+   "summary": "Projects tagged profile.",
+   "aliases": [
+    "profile"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:readme",
+   "type": "topic",
+   "name": "readme",
+   "summary": "Projects tagged readme.",
+   "aliases": [
+    "readme"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo",
+   "type": "account",
+   "name": "LKM-Repo",
+   "summary": "",
+   "aliases": [
+    "lkm repo",
+    "lkmrepo"
+   ],
+   "attrs": {
+    "created_at": "2026-09-14",
+    "followers": 2,
+    "public_repos": 12
+   },
+   "url": "https://github.com/LKM-Repo"
+  },
+  {
+   "key": "LKM-Repo/AI_Plan_Cost_Web",
+   "type": "repo",
+   "name": "AI_Plan_Cost_Web",
+   "summary": "AI_Plan_Cost_Web",
+   "aliases": [
+    "ai plan cost web",
+    "lkm repo ai plan cost web",
+    "aiplancostweb"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-08-08",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1327348106,
+    "homepage": "https://lkm-repo.github.io/AI_Plan_Cost_Web/",
+    "language": "JavaScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-09-27",
+    "size_kb": 113,
+    "stars": 0,
+    "topics": [
+     "ai",
+     "cost-tracking",
+     "web"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/AI_Plan_Cost_Web"
+  },
+  {
+   "key": "topic:ai",
+   "type": "topic",
+   "name": "ai",
+   "summary": "Projects tagged ai.",
+   "aliases": [],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:cost-tracking",
+   "type": "topic",
+   "name": "cost-tracking",
+   "summary": "Projects tagged cost-tracking.",
+   "aliases": [
+    "cost tracking",
+    "costtracking"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/domain-ops-agent",
+   "type": "repo",
+   "name": "domain-ops-agent",
+   "summary": "Make a domain's transactional valid operations the AI agent's action space — invariant-preserving, approval-gated, revertible, and verifiable.",
+   "aliases": [
+    "domain ops agent",
+    "lkm repo domain ops agent",
+    "domainopsagent"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-09-11",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1365263166,
+    "homepage": "",
+    "language": "Python",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2026-09-18",
+    "size_kb": 78,
+    "stars": 5,
+    "topics": [
+     "ai-agents",
+     "domain-driven-design",
+     "templates",
+     "transactions"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/domain-ops-agent"
+  },
+  {
+   "key": "topic:ai-agents",
+   "type": "topic",
+   "name": "ai-agents",
+   "summary": "Projects tagged ai-agents.",
+   "aliases": [
+    "ai agents",
+    "aiagents"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:domain-driven-design",
+   "type": "topic",
+   "name": "domain-driven-design",
+   "summary": "Projects tagged domain-driven-design.",
+   "aliases": [
+    "domain driven design",
+    "domaindrivendesign"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:templates",
+   "type": "topic",
+   "name": "templates",
+   "summary": "Projects tagged templates.",
+   "aliases": [
+    "templates"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:transactions",
+   "type": "topic",
+   "name": "transactions",
+   "summary": "Projects tagged transactions.",
+   "aliases": [
+    "transactions"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/Asterisk-Stress-Test",
+   "type": "repo",
+   "name": "Asterisk-Stress-Test",
+   "summary": "project to do stress test on asterisk server",
+   "aliases": [
+    "asterisk stress test",
+    "lkm repo asterisk stress test",
+    "asteriskstresstest"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-09-17",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1058525680,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-09-03",
+    "size_kb": 46749,
+    "stars": 1,
+    "topics": [
+     "asterisk",
+     "python",
+     "stress-testing"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/Asterisk-Stress-Test"
+  },
+  {
+   "key": "topic:asterisk",
+   "type": "topic",
+   "name": "asterisk",
+   "summary": "Projects tagged asterisk.",
+   "aliases": [
+    "asterisk"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:stress-testing",
+   "type": "topic",
+   "name": "stress-testing",
+   "summary": "Projects tagged stress-testing.",
+   "aliases": [
+    "stress testing",
+    "stresstesting"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/AI_Phishing_Playground",
+   "type": "repo",
+   "name": "AI_Phishing_Playground",
+   "summary": "Framework for AI phishing, containerized with Docker",
+   "aliases": [
+    "ai phishing playground",
+    "lkm repo ai phishing playground",
+    "aiphishingplayground"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-05-05",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1229692413,
+    "homepage": "",
+    "language": "Shell",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-05-25",
+    "size_kb": 9,
+    "stars": 0,
+    "topics": [
+     "ai",
+     "ai-agents",
+     "phishing-script",
+     "template"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/AI_Phishing_Playground"
+  },
+  {
+   "key": "language:shell",
+   "type": "language",
+   "name": "Shell",
+   "summary": "Projects written in Shell.",
+   "aliases": [
+    "shell"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:phishing-script",
+   "type": "topic",
+   "name": "phishing-script",
+   "summary": "Projects tagged phishing-script.",
+   "aliases": [
+    "phishing script",
+    "phishingscript"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/lyrics_render",
+   "type": "repo",
+   "name": "lyrics_render",
+   "summary": "program for adding subtitles to video",
+   "aliases": [
+    "lyrics render",
+    "lkm repo lyrics render",
+    "lyricsrender"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-04-22",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1217552653,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-04-22",
+    "size_kb": 35,
+    "stars": 1,
+    "topics": [
+     "asr",
+     "gpu",
+     "lyrics",
+     "subtitles",
+     "video"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/lyrics_render"
+  },
+  {
+   "key": "topic:asr",
+   "type": "topic",
+   "name": "asr",
+   "summary": "Projects tagged asr.",
+   "aliases": [
+    "asr"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:gpu",
+   "type": "topic",
+   "name": "gpu",
+   "summary": "Projects tagged gpu.",
+   "aliases": [
+    "gpu"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:lyrics",
+   "type": "topic",
+   "name": "lyrics",
+   "summary": "Projects tagged lyrics.",
+   "aliases": [
+    "lyrics"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:subtitles",
+   "type": "topic",
+   "name": "subtitles",
+   "summary": "Projects tagged subtitles.",
+   "aliases": [
+    "subtitles"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:video",
+   "type": "topic",
+   "name": "video",
+   "summary": "Projects tagged video.",
+   "aliases": [
+    "video"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/Graph_Chatbot",
+   "type": "repo",
+   "name": "Graph_Chatbot",
+   "summary": "projects for chatting along graph with external LLM service",
+   "aliases": [
+    "graph chatbot",
+    "lkm repo graph chatbot",
+    "graphchatbot"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-09",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1112917198,
+    "homepage": "",
+    "language": "JavaScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-09",
+    "size_kb": 25150,
+    "stars": 3,
+    "topics": [
+     "chatbot",
+     "graph-algorithms",
+     "llm"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/Graph_Chatbot"
+  },
+  {
+   "key": "topic:chatbot",
+   "type": "topic",
+   "name": "chatbot",
+   "summary": "Projects tagged chatbot.",
+   "aliases": [
+    "chatbot"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:graph-algorithms",
+   "type": "topic",
+   "name": "graph-algorithms",
+   "summary": "Projects tagged graph-algorithms.",
+   "aliases": [
+    "graph algorithms",
+    "graphalgorithms"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:llm",
+   "type": "topic",
+   "name": "llm",
+   "summary": "Projects tagged llm.",
+   "aliases": [
+    "llm"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/MUSA_GPU_Monitor",
+   "type": "repo",
+   "name": "MUSA_GPU_Monitor",
+   "summary": "python program to capture MooreThreads GPU status",
+   "aliases": [
+    "musa gpu monitor",
+    "lkm repo musa gpu monitor",
+    "musagpumonitor"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-03",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1108979226,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-03",
+    "size_kb": 8,
+    "stars": 0,
+    "topics": [
+     "gpu",
+     "gpu-monitoring",
+     "moorethreads"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/MUSA_GPU_Monitor"
+  },
+  {
+   "key": "topic:gpu-monitoring",
+   "type": "topic",
+   "name": "gpu-monitoring",
+   "summary": "Projects tagged gpu-monitoring.",
+   "aliases": [
+    "gpu monitoring",
+    "gpumonitoring"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:moorethreads",
+   "type": "topic",
+   "name": "moorethreads",
+   "summary": "Projects tagged moorethreads.",
+   "aliases": [
+    "moorethreads"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "repo",
+   "name": "GPT-SoVITS-Musa",
+   "summary": "musa gpu adaptation of gpt-sovits",
+   "aliases": [
+    "gpt so vits musa",
+    "lkm repo gpt so vits musa",
+    "gptsovitsmusa"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-07-18",
+    "default_branch": "main",
+    "fork": true,
+    "forks": 0,
+    "github_id": 1021914893,
+    "homepage": "",
+    "language": "Python",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2025-11-18",
+    "size_kb": 64210,
+    "stars": 2,
+    "topics": [
+     "gpt-sovits",
+     "gpu",
+     "moorethreads",
+     "musa"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/GPT-SoVITS-Musa"
+  },
+  {
+   "key": "topic:gpt-sovits",
+   "type": "topic",
+   "name": "gpt-sovits",
+   "summary": "Projects tagged gpt-sovits.",
+   "aliases": [
+    "gpt sovits",
+    "gptsovits"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:musa",
+   "type": "topic",
+   "name": "musa",
+   "summary": "Projects tagged musa.",
+   "aliases": [
+    "musa"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/PIKE-RAG_Verbose",
+   "type": "repo",
+   "name": "PIKE-RAG_Verbose",
+   "summary": "PIKE-RAG: sPecIalized KnowledgE and Rationale Augmented Generation",
+   "aliases": [
+    "pike rag verbose",
+    "lkm repo pike rag verbose",
+    "pikeragverbose"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-10-29",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1085421382,
+    "homepage": "https://arxiv.org/abs/2501.11551",
+    "language": "Python",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2025-10-29",
+    "size_kb": 7960,
+    "stars": 3,
+    "topics": [
+     "learning",
+     "learning-by-doing",
+     "pike-rag"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/PIKE-RAG_Verbose"
+  },
+  {
+   "key": "topic:learning-by-doing",
+   "type": "topic",
+   "name": "learning-by-doing",
+   "summary": "Projects tagged learning-by-doing.",
+   "aliases": [
+    "learning by doing",
+    "learningbydoing"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:pike-rag",
+   "type": "topic",
+   "name": "pike-rag",
+   "summary": "Projects tagged pike-rag.",
+   "aliases": [
+    "pike rag",
+    "pikerag"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "repo",
+   "name": "Retrieval-based-Voice-Conversion-WebUI-musa",
+   "summary": "Easily train a good VC model with voice data <= 10 mins!",
+   "aliases": [
+    "retrieval based voice conversion web ui musa",
+    "lkm repo retrieval based voice conversion web ui musa",
+    "retrievalbasedvoiceconversionwebuimusa"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-05-27",
+    "default_branch": "main",
+    "fork": true,
+    "forks": 0,
+    "github_id": 991144144,
+    "homepage": "",
+    "language": "Python",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2025-07-23",
+    "size_kb": 42498,
+    "stars": 1,
+    "topics": [
+     "moore-threads",
+     "musa",
+     "sovits",
+     "svc"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa"
+  },
+  {
+   "key": "topic:moore-threads",
+   "type": "topic",
+   "name": "moore-threads",
+   "summary": "Projects tagged moore-threads.",
+   "aliases": [
+    "moore threads",
+    "moorethreads"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:sovits",
+   "type": "topic",
+   "name": "sovits",
+   "summary": "Projects tagged sovits.",
+   "aliases": [
+    "sovits"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:svc",
+   "type": "topic",
+   "name": "svc",
+   "summary": "Projects tagged svc.",
+   "aliases": [
+    "svc"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/so-vits-svc-musa",
+   "type": "repo",
+   "name": "so-vits-svc-musa",
+   "summary": "SoftVC VITS Singing Voice Conversion",
+   "aliases": [
+    "so vits svc musa",
+    "lkm repo so vits svc musa",
+    "sovitssvcmusa"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-05-26",
+    "default_branch": "main_lkm",
+    "fork": true,
+    "forks": 0,
+    "github_id": 990357669,
+    "homepage": "",
+    "language": "Python",
+    "license": "AGPL-3.0",
+    "open_issues": 0,
+    "pushed_at": "2025-07-23",
+    "size_kb": 11404,
+    "stars": 1,
+    "topics": [
+     "moore-threads",
+     "so-vits-svc-fork"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/so-vits-svc-musa"
+  },
+  {
+   "key": "topic:so-vits-svc-fork",
+   "type": "topic",
+   "name": "so-vits-svc-fork",
+   "summary": "Projects tagged so-vits-svc-fork.",
+   "aliases": [
+    "so vits svc fork",
+    "sovitssvcfork"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "repo",
+   "name": "Transformer-Implementation-C-Python",
+   "summary": "hand written code for transformer in c, no acceleration",
+   "aliases": [
+    "transformer implementation c python",
+    "lkm repo transformer implementation c python",
+    "transformerimplementationcpython"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2024-11-29",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 895827858,
+    "homepage": "",
+    "language": "C",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-04-27",
+    "size_kb": 7966,
+    "stars": 1,
+    "topics": [
+     "c",
+     "encoder-decoder-architecture",
+     "sample",
+     "template",
+     "transformers",
+     "tutorial"
+    ]
+   },
+   "url": "https://github.com/LKM-Repo/Transformer-Implementation-C-Python"
+  },
+  {
+   "key": "language:c",
+   "type": "language",
+   "name": "C",
+   "summary": "Projects written in C.",
+   "aliases": [],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:c",
+   "type": "topic",
+   "name": "c",
+   "summary": "Projects tagged c.",
+   "aliases": [],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:encoder-decoder-architecture",
+   "type": "topic",
+   "name": "encoder-decoder-architecture",
+   "summary": "Projects tagged encoder-decoder-architecture.",
+   "aliases": [
+    "encoder decoder architecture",
+    "encoderdecoderarchitecture"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:sample",
+   "type": "topic",
+   "name": "sample",
+   "summary": "Projects tagged sample.",
+   "aliases": [
+    "sample"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:transformers",
+   "type": "topic",
+   "name": "transformers",
+   "summary": "Projects tagged transformers.",
+   "aliases": [
+    "transformers"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:tutorial",
+   "type": "topic",
+   "name": "tutorial",
+   "summary": "Projects tagged tutorial.",
+   "aliases": [
+    "tutorial"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "ellkaimu",
+   "type": "account",
+   "name": "ellkaimu",
+   "summary": "",
+   "aliases": [
+    "ellkaimu"
+   ],
+   "attrs": {
+    "created_at": "2025-11-10",
+    "followers": 1,
+    "public_repos": 10
+   },
+   "url": "https://github.com/ellkaimu"
+  },
+  {
+   "key": "ellkaimu/AmazeFileUtilities",
+   "type": "repo",
+   "name": "AmazeFileUtilities",
+   "summary": "An open source Google Files alternative for Android",
+   "aliases": [
+    "amaze file utilities",
+    "ellkaimu amaze file utilities",
+    "amazefileutilities"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-09-11",
+    "default_branch": "feature",
+    "fork": true,
+    "forks": 0,
+    "github_id": 1365357370,
+    "homepage": "https://teamamaze.xyz",
+    "language": "Kotlin",
+    "license": "GPL-3.0",
+    "open_issues": 0,
+    "pushed_at": "2026-09-15",
+    "size_kb": 25411,
+    "stars": 0,
+    "topics": []
+   },
+   "url": "https://github.com/ellkaimu/AmazeFileUtilities"
+  },
+  {
+   "key": "ellkaimu/Sharedboard",
+   "type": "repo",
+   "name": "Sharedboard",
+   "summary": "Real-time collaborative text editor (Google-Docs style) built on pycrdt (Yjs in Python) + ProseMirror. Multi-board with shareable URLs, presence, undo/redo, SQLite persistence.",
+   "aliases": [
+    "sharedboard",
+    "ellkaimu sharedboard"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-09-14",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1369361701,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-09-14",
+    "size_kb": 43,
+    "stars": 0,
+    "topics": [
+     "collaborative-editor",
+     "crdt",
+     "real-time",
+     "self-hosted",
+     "websocket"
+    ]
+   },
+   "url": "https://github.com/ellkaimu/Sharedboard"
+  },
+  {
+   "key": "topic:collaborative-editor",
+   "type": "topic",
+   "name": "collaborative-editor",
+   "summary": "Projects tagged collaborative-editor.",
+   "aliases": [
+    "collaborative editor",
+    "collaborativeeditor"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:crdt",
+   "type": "topic",
+   "name": "crdt",
+   "summary": "Projects tagged crdt.",
+   "aliases": [
+    "crdt"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:real-time",
+   "type": "topic",
+   "name": "real-time",
+   "summary": "Projects tagged real-time.",
+   "aliases": [
+    "real time",
+    "realtime"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:self-hosted",
+   "type": "topic",
+   "name": "self-hosted",
+   "summary": "Projects tagged self-hosted.",
+   "aliases": [
+    "self hosted",
+    "selfhosted"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:websocket",
+   "type": "topic",
+   "name": "websocket",
+   "summary": "Projects tagged websocket.",
+   "aliases": [
+    "websocket"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "ellkaimu/FGA",
+   "type": "repo",
+   "name": "FGA",
+   "summary": "Auto-battle app for F/GO Android",
+   "aliases": [
+    "fga",
+    "ellkaimu fga"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-09-11",
+    "default_branch": "master",
+    "fork": true,
+    "forks": 0,
+    "github_id": 1365365037,
+    "homepage": "https://fate-grand-automata.github.io",
+    "language": "Kotlin",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2026-09-11",
+    "size_kb": 65674,
+    "stars": 2,
+    "topics": [
+     "automation",
+     "fgo",
+     "script"
+    ]
+   },
+   "url": "https://github.com/ellkaimu/FGA"
+  },
+  {
+   "key": "topic:automation",
+   "type": "topic",
+   "name": "automation",
+   "summary": "Projects tagged automation.",
+   "aliases": [
+    "automation"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:fgo",
+   "type": "topic",
+   "name": "fgo",
+   "summary": "Projects tagged fgo.",
+   "aliases": [
+    "fgo"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:script",
+   "type": "topic",
+   "name": "script",
+   "summary": "Projects tagged script.",
+   "aliases": [
+    "script"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "ellkaimu/BiliDownload",
+   "type": "repo",
+   "name": "BiliDownload",
+   "summary": "Android Bilibili视频下载器",
+   "aliases": [
+    "bili download",
+    "ellkaimu bili download",
+    "bilidownload"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-09-10",
+    "default_branch": "master",
+    "fork": true,
+    "forks": 0,
+    "github_id": 1363469447,
+    "homepage": "",
+    "language": "Kotlin",
+    "license": "GPL-3.0",
+    "open_issues": 0,
+    "pushed_at": "2026-09-10",
+    "size_kb": 166881,
+    "stars": 2,
+    "topics": [
+     "android",
+     "bilibili",
+     "downloader",
+     "video-downloader",
+     "videos"
+    ]
+   },
+   "url": "https://github.com/ellkaimu/BiliDownload"
+  },
+  {
+   "key": "topic:bilibili",
+   "type": "topic",
+   "name": "bilibili",
+   "summary": "Projects tagged bilibili.",
+   "aliases": [
+    "bilibili"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:downloader",
+   "type": "topic",
+   "name": "downloader",
+   "summary": "Projects tagged downloader.",
+   "aliases": [
+    "downloader"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:video-downloader",
+   "type": "topic",
+   "name": "video-downloader",
+   "summary": "Projects tagged video-downloader.",
+   "aliases": [
+    "video downloader",
+    "videodownloader"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:videos",
+   "type": "topic",
+   "name": "videos",
+   "summary": "Projects tagged videos.",
+   "aliases": [
+    "videos"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "ellkaimu/Anime-Webview",
+   "type": "repo",
+   "name": "Anime-Webview",
+   "summary": "动画下载器",
+   "aliases": [
+    "anime webview",
+    "ellkaimu anime webview",
+    "animewebview"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2024-06-19",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 817186675,
+    "homepage": "",
+    "language": "Dart",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-04-25",
+    "size_kb": 1091,
+    "stars": 6,
+    "topics": [
+     "android-app",
+     "anime",
+     "anime-downloader",
+     "flutter-apps",
+     "localstorage",
+     "phone"
+    ]
+   },
+   "url": "https://github.com/ellkaimu/Anime-Webview"
+  },
+  {
+   "key": "language:dart",
+   "type": "language",
+   "name": "Dart",
+   "summary": "Projects written in Dart.",
+   "aliases": [
+    "dart"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:anime",
+   "type": "topic",
+   "name": "anime",
+   "summary": "Projects tagged anime.",
+   "aliases": [
+    "anime"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:anime-downloader",
+   "type": "topic",
+   "name": "anime-downloader",
+   "summary": "Projects tagged anime-downloader.",
+   "aliases": [
+    "anime downloader",
+    "animedownloader"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:flutter-apps",
+   "type": "topic",
+   "name": "flutter-apps",
+   "summary": "Projects tagged flutter-apps.",
+   "aliases": [
+    "flutter apps",
+    "flutterapps"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "ellkaimu/Finance-Management-Web",
+   "type": "repo",
+   "name": "Finance-Management-Web",
+   "summary": "offline finance management web, simply sql.js",
+   "aliases": [
+    "finance management web",
+    "ellkaimu finance management web",
+    "financemanagementweb"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-08-28",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1045970915,
+    "homepage": "https://ellkaimu.github.io/Finance-Management-Web/",
+    "language": "TypeScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-04-25",
+    "size_kb": 2966,
+    "stars": 3,
+    "topics": []
+   },
+   "url": "https://github.com/ellkaimu/Finance-Management-Web"
+  },
+  {
+   "key": "ellkaimu/maaMines",
+   "type": "repo",
+   "name": "maaMines",
+   "summary": "MAA for MineSweeper",
+   "aliases": [
+    "maa mines",
+    "ellkaimu maa mines",
+    "maamines"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-01-10",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1131591633,
+    "homepage": "",
+    "language": "Python",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2026-01-10",
+    "size_kb": 119,
+    "stars": 1,
+    "topics": [
+     "automation",
+     "maa",
+     "minesweeper"
+    ]
+   },
+   "url": "https://github.com/ellkaimu/maaMines"
+  },
+  {
+   "key": "topic:maa",
+   "type": "topic",
+   "name": "maa",
+   "summary": "Projects tagged maa.",
+   "aliases": [
+    "maa"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:minesweeper",
+   "type": "topic",
+   "name": "minesweeper",
+   "summary": "Projects tagged minesweeper.",
+   "aliases": [
+    "minesweeper"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "ellkaimu/camera-link",
+   "type": "repo",
+   "name": "camera-link",
+   "summary": "Simple android app to make your old phone an IP camera",
+   "aliases": [
+    "camera link",
+    "ellkaimu camera link",
+    "cameralink"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-01-04",
+    "default_branch": "master",
+    "fork": true,
+    "forks": 1,
+    "github_id": 1127507191,
+    "homepage": "",
+    "language": "Kotlin",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2026-01-04",
+    "size_kb": 313,
+    "stars": 1,
+    "topics": []
+   },
+   "url": "https://github.com/ellkaimu/camera-link"
+  },
+  {
+   "key": "ellkaimu/Image_Download_Organizer",
+   "type": "repo",
+   "name": "Image_Download_Organizer",
+   "summary": "phone apps for managing image downloaded",
+   "aliases": [
+    "image download organizer",
+    "ellkaimu image download organizer",
+    "imagedownloadorganizer"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-21",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1120405641,
+    "homepage": "",
+    "language": "Kotlin",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-21",
+    "size_kb": 4189,
+    "stars": 3,
+    "topics": [
+     "android",
+     "file-grouping",
+     "image-processing",
+     "organizer"
+    ]
+   },
+   "url": "https://github.com/ellkaimu/Image_Download_Organizer"
+  },
+  {
+   "key": "topic:file-grouping",
+   "type": "topic",
+   "name": "file-grouping",
+   "summary": "Projects tagged file-grouping.",
+   "aliases": [
+    "file grouping",
+    "filegrouping"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:image-processing",
+   "type": "topic",
+   "name": "image-processing",
+   "summary": "Projects tagged image-processing.",
+   "aliases": [
+    "image processing",
+    "imageprocessing"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:organizer",
+   "type": "topic",
+   "name": "organizer",
+   "summary": "Projects tagged organizer.",
+   "aliases": [
+    "organizer"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "ellkaimu/SSH-Management-App",
+   "type": "repo",
+   "name": "SSH-Management-App",
+   "summary": "free phone app for ssh and sftp, dont need paid ssh app anymore",
+   "aliases": [
+    "ssh management app",
+    "ellkaimu ssh management app",
+    "sshmanagementapp"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2024-11-29",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 895825343,
+    "homepage": "",
+    "language": "Dart",
+    "license": "",
+    "open_issues": 1,
+    "pushed_at": "2025-04-26",
+    "size_kb": 1602,
+    "stars": 4,
+    "topics": [
+     "free",
+     "phone-app",
+     "remote-control",
+     "sftp",
+     "ssh"
+    ]
+   },
+   "url": "https://github.com/ellkaimu/SSH-Management-App"
+  },
+  {
+   "key": "topic:free",
+   "type": "topic",
+   "name": "free",
+   "summary": "Projects tagged free.",
+   "aliases": [
+    "free"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:phone-app",
+   "type": "topic",
+   "name": "phone-app",
+   "summary": "Projects tagged phone-app.",
+   "aliases": [
+    "phone app",
+    "phoneapp"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:remote-control",
+   "type": "topic",
+   "name": "remote-control",
+   "summary": "Projects tagged remote-control.",
+   "aliases": [
+    "remote control",
+    "remotecontrol"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:sftp",
+   "type": "topic",
+   "name": "sftp",
+   "summary": "Projects tagged sftp.",
+   "aliases": [
+    "sftp"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:ssh",
+   "type": "topic",
+   "name": "ssh",
+   "summary": "Projects tagged ssh.",
+   "aliases": [
+    "ssh"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm",
+   "type": "account",
+   "name": "plae-lkm",
+   "summary": "",
+   "aliases": [
+    "plae lkm",
+    "plaelkm"
+   ],
+   "attrs": {
+    "created_at": "2026-09-10",
+    "followers": 1,
+    "public_repos": 13
+   },
+   "url": "https://github.com/plae-lkm"
+  },
+  {
+   "key": "plae-lkm/term-copilot",
+   "type": "repo",
+   "name": "term-copilot",
+   "summary": "term-copilot",
+   "aliases": [
+    "term copilot",
+    "plae lkm term copilot",
+    "termcopilot"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-08-08",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1327440204,
+    "homepage": "",
+    "language": "Python",
+    "license": "MIT",
+    "open_issues": 0,
+    "pushed_at": "2026-08-08",
+    "size_kb": 38,
+    "stars": 1,
+    "topics": [
+     "ai-assistants",
+     "copilot",
+     "terminal"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/term-copilot"
+  },
+  {
+   "key": "topic:ai-assistants",
+   "type": "topic",
+   "name": "ai-assistants",
+   "summary": "Projects tagged ai-assistants.",
+   "aliases": [
+    "ai assistants",
+    "aiassistants"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:copilot",
+   "type": "topic",
+   "name": "copilot",
+   "summary": "Projects tagged copilot.",
+   "aliases": [
+    "copilot"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:terminal",
+   "type": "topic",
+   "name": "terminal",
+   "summary": "Projects tagged terminal.",
+   "aliases": [
+    "terminal"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/Finance_Lux_Web",
+   "type": "repo",
+   "name": "Finance_Lux_Web",
+   "summary": "",
+   "aliases": [
+    "finance lux web",
+    "plae lkm finance lux web",
+    "financeluxweb"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2026-05-11",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1235342538,
+    "homepage": "",
+    "language": "TypeScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2026-05-12",
+    "size_kb": 2727,
+    "stars": 0,
+    "topics": [
+     "finance",
+     "rich-text",
+     "template",
+     "ui-design",
+     "web"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/Finance_Lux_Web"
+  },
+  {
+   "key": "topic:finance",
+   "type": "topic",
+   "name": "Finance",
+   "summary": "Money, budgeting and personal-finance tooling.",
+   "aliases": [
+    "finance",
+    "topic finance",
+    "topicfinance"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:rich-text",
+   "type": "topic",
+   "name": "rich-text",
+   "summary": "Projects tagged rich-text.",
+   "aliases": [
+    "rich text",
+    "richtext"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:ui-design",
+   "type": "topic",
+   "name": "ui-design",
+   "summary": "Projects tagged ui-design.",
+   "aliases": [
+    "ui design",
+    "uidesign"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/ubuntu_setup",
+   "type": "repo",
+   "name": "ubuntu_setup",
+   "summary": "doc to record my ubuntu installation and setup",
+   "aliases": [
+    "ubuntu setup",
+    "plae lkm ubuntu setup",
+    "ubuntusetup"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-08-19",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1040499919,
+    "homepage": "https://plae-lkm.github.io/ubuntu_setup/",
+    "language": "Shell",
+    "license": "",
+    "open_issues": 1,
+    "pushed_at": "2026-01-04",
+    "size_kb": 56133,
+    "stars": 5,
+    "topics": [
+     "maniac",
+     "software",
+     "ubuntu"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/ubuntu_setup"
+  },
+  {
+   "key": "topic:maniac",
+   "type": "topic",
+   "name": "maniac",
+   "summary": "Projects tagged maniac.",
+   "aliases": [
+    "maniac"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:software",
+   "type": "topic",
+   "name": "software",
+   "summary": "Projects tagged software.",
+   "aliases": [
+    "software"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:ubuntu",
+   "type": "topic",
+   "name": "ubuntu",
+   "summary": "Projects tagged ubuntu.",
+   "aliases": [
+    "ubuntu"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/i_love_you_web",
+   "type": "repo",
+   "name": "i_love_you_web",
+   "summary": "我喜欢你，你喜欢我!",
+   "aliases": [
+    "i love you web",
+    "plae lkm i love you web",
+    "iloveyouweb"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-28",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1124007951,
+    "homepage": "https://plae-lkm.github.io/i_love_you_web/",
+    "language": "JavaScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-28",
+    "size_kb": 153,
+    "stars": 2,
+    "topics": [
+     "i-love-you",
+     "joke",
+     "web"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/i_love_you_web"
+  },
+  {
+   "key": "topic:i-love-you",
+   "type": "topic",
+   "name": "i-love-you",
+   "summary": "Projects tagged i-love-you.",
+   "aliases": [
+    "i love you",
+    "iloveyou"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:joke",
+   "type": "topic",
+   "name": "joke",
+   "summary": "Projects tagged joke.",
+   "aliases": [
+    "joke"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/slow_life_web",
+   "type": "repo",
+   "name": "slow_life_web",
+   "summary": "反者道之动，弱者道之用",
+   "aliases": [
+    "slow life web",
+    "plae lkm slow life web",
+    "slowlifeweb"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-28",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1123978702,
+    "homepage": "https://plae-lkm.github.io/slow_life_web/",
+    "language": "JavaScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-28",
+    "size_kb": 9,
+    "stars": 1,
+    "topics": [
+     "joke",
+     "slow-life",
+     "web"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/slow_life_web"
+  },
+  {
+   "key": "topic:slow-life",
+   "type": "topic",
+   "name": "slow-life",
+   "summary": "Projects tagged slow-life.",
+   "aliases": [
+    "slow life",
+    "slowlife"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/yinyang_generator",
+   "type": "repo",
+   "name": "yinyang_generator",
+   "summary": "万物负阴而抱阳，冲气以为和",
+   "aliases": [
+    "yinyang generator",
+    "plae lkm yinyang generator",
+    "yinyanggenerator"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-28",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1123975141,
+    "homepage": "https://plae-lkm.github.io/yinyang_generator/",
+    "language": "JavaScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-28",
+    "size_kb": 6,
+    "stars": 1,
+    "topics": [
+     "joke",
+     "web",
+     "yinyang"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/yinyang_generator"
+  },
+  {
+   "key": "topic:yinyang",
+   "type": "topic",
+   "name": "yinyang",
+   "summary": "Projects tagged yinyang.",
+   "aliases": [
+    "yinyang"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/Match_Ethernet_Cable",
+   "type": "repo",
+   "name": "Match_Ethernet_Cable",
+   "summary": "python program to match from 2 ends the ethernet cable or any cable",
+   "aliases": [
+    "match ethernet cable",
+    "plae lkm match ethernet cable",
+    "matchethernetcable"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-03",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1108998086,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-03",
+    "size_kb": 15,
+    "stars": 1,
+    "topics": [
+     "color-matching",
+     "ethernet-cable",
+     "hardware"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/Match_Ethernet_Cable"
+  },
+  {
+   "key": "topic:color-matching",
+   "type": "topic",
+   "name": "color-matching",
+   "summary": "Projects tagged color-matching.",
+   "aliases": [
+    "color matching",
+    "colormatching"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:ethernet-cable",
+   "type": "topic",
+   "name": "ethernet-cable",
+   "summary": "Projects tagged ethernet-cable.",
+   "aliases": [
+    "ethernet cable",
+    "ethernetcable"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:hardware",
+   "type": "topic",
+   "name": "hardware",
+   "summary": "Projects tagged hardware.",
+   "aliases": [
+    "hardware"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/Capture_Running_Terminal",
+   "type": "repo",
+   "name": "Capture_Running_Terminal",
+   "summary": "python program for capturing running terminal, especially if the terminal cannot record all i/o",
+   "aliases": [
+    "capture running terminal",
+    "plae lkm capture running terminal",
+    "capturerunningterminal"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-03",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1108996391,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-03",
+    "size_kb": 27,
+    "stars": 2,
+    "topics": [
+     "python",
+     "terminal",
+     "terminal-track"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/Capture_Running_Terminal"
+  },
+  {
+   "key": "topic:terminal-track",
+   "type": "topic",
+   "name": "terminal-track",
+   "summary": "Projects tagged terminal-track.",
+   "aliases": [
+    "terminal track",
+    "terminaltrack"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/Flush_Youtube_Account",
+   "type": "repo",
+   "name": "Flush_Youtube_Account",
+   "summary": "python codes to flush your youtube account to get rid of politicized shitty recommendation",
+   "aliases": [
+    "flush youtube account",
+    "plae lkm flush youtube account",
+    "flushyoutubeaccount"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-12-03",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1108976746,
+    "homepage": "",
+    "language": "Python",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-12-03",
+    "size_kb": 6,
+    "stars": 0,
+    "topics": [
+     "flush-account",
+     "scripts",
+     "youtube"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/Flush_Youtube_Account"
+  },
+  {
+   "key": "topic:flush-account",
+   "type": "topic",
+   "name": "flush-account",
+   "summary": "Projects tagged flush-account.",
+   "aliases": [
+    "flush account",
+    "flushaccount"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:scripts",
+   "type": "topic",
+   "name": "scripts",
+   "summary": "Projects tagged scripts.",
+   "aliases": [
+    "scripts"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:youtube",
+   "type": "topic",
+   "name": "youtube",
+   "summary": "Projects tagged youtube.",
+   "aliases": [
+    "youtube"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/Type_As_If_You_Are_Working",
+   "type": "repo",
+   "name": "Type_As_If_You_Are_Working",
+   "summary": "Type as if you are working",
+   "aliases": [
+    "type as if you are working",
+    "plae lkm type as if you are working",
+    "typeasifyouareworking"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-09-10",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1053949483,
+    "homepage": "https://plae-lkm.github.io/Type_As_If_You_Are_Working/",
+    "language": "HTML",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-11-27",
+    "size_kb": 520,
+    "stars": 3,
+    "topics": [
+     "joke",
+     "type-as-if-working",
+     "web"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/Type_As_If_You_Are_Working"
+  },
+  {
+   "key": "language:html",
+   "type": "language",
+   "name": "HTML",
+   "summary": "Projects written in HTML.",
+   "aliases": [
+    "html"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:type-as-if-working",
+   "type": "topic",
+   "name": "type-as-if-working",
+   "summary": "Projects tagged type-as-if-working.",
+   "aliases": [
+    "type as if working",
+    "typeasifworking"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/ThreeBodySystemAnimation",
+   "type": "repo",
+   "name": "ThreeBodySystemAnimation",
+   "summary": "cpp program for 2d three body system animation",
+   "aliases": [
+    "three body system animation",
+    "plae lkm three body system animation",
+    "threebodysystemanimation",
+    "three body simulation"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-11-19",
+    "default_branch": "main",
+    "fork": false,
+    "forks": 0,
+    "github_id": 1099519412,
+    "homepage": "",
+    "language": "C++",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-11-20",
+    "size_kb": 5,
+    "stars": 1,
+    "topics": [
+     "3-body-problem",
+     "animation",
+     "cpp"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/ThreeBodySystemAnimation"
+  },
+  {
+   "key": "language:c++",
+   "type": "language",
+   "name": "C++",
+   "summary": "Projects written in C++.",
+   "aliases": [],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:3-body-problem",
+   "type": "topic",
+   "name": "3-body-problem",
+   "summary": "Projects tagged 3-body-problem.",
+   "aliases": [
+    "3 body problem",
+    "3bodyproblem"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:animation",
+   "type": "topic",
+   "name": "animation",
+   "summary": "Projects tagged animation.",
+   "aliases": [
+    "animation"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:cpp",
+   "type": "topic",
+   "name": "cpp",
+   "summary": "Projects tagged cpp.",
+   "aliases": [
+    "cpp"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/Restart-Router",
+   "type": "repo",
+   "name": "Restart-Router",
+   "summary": "Restart my Huawei Router with a click of a button, cuz I'm lazy.",
+   "aliases": [
+    "restart router",
+    "plae lkm restart router",
+    "restartrouter"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-10-05",
+    "default_branch": "main",
+    "fork": true,
+    "forks": 0,
+    "github_id": 1070027725,
+    "homepage": "",
+    "language": "JavaScript",
+    "license": "",
+    "open_issues": 0,
+    "pushed_at": "2025-10-05",
+    "size_kb": 32,
+    "stars": 1,
+    "topics": [
+     "huawei",
+     "restart-script",
+     "router",
+     "scripts"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/Restart-Router"
+  },
+  {
+   "key": "topic:huawei",
+   "type": "topic",
+   "name": "huawei",
+   "summary": "Projects tagged huawei.",
+   "aliases": [
+    "huawei"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:restart-script",
+   "type": "topic",
+   "name": "restart-script",
+   "summary": "Projects tagged restart-script.",
+   "aliases": [
+    "restart script",
+    "restartscript"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:router",
+   "type": "topic",
+   "name": "router",
+   "summary": "Projects tagged router.",
+   "aliases": [
+    "router"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-lkm/Dictionary-Anywhere",
+   "type": "repo",
+   "name": "Dictionary-Anywhere",
+   "summary": "Dictionary extension that helps you stay focused on what you are reading by eliminating the need to search for meaning.",
+   "aliases": [
+    "dictionary anywhere",
+    "plae lkm dictionary anywhere",
+    "dictionaryanywhere"
+   ],
+   "attrs": {
+    "archived": false,
+    "created_at": "2025-02-21",
+    "default_branch": "master",
+    "fork": true,
+    "forks": 0,
+    "github_id": 936551028,
+    "homepage": "",
+    "language": "HTML",
+    "license": "GPL-3.0",
+    "open_issues": 0,
+    "pushed_at": "2025-02-21",
+    "size_kb": 97,
+    "stars": 1,
+    "topics": [
+     "addon",
+     "browser",
+     "dictionary"
+    ]
+   },
+   "url": "https://github.com/plae-lkm/Dictionary-Anywhere"
+  },
+  {
+   "key": "topic:browser",
+   "type": "topic",
+   "name": "browser",
+   "summary": "Projects tagged browser.",
+   "aliases": [
+    "browser"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:dictionary",
+   "type": "topic",
+   "name": "dictionary",
+   "summary": "Projects tagged dictionary.",
+   "aliases": [
+    "dictionary"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "plae-tljg",
+   "type": "person",
+   "name": "LKM",
+   "summary": "Builds offline-first tools, Android automation, and AI-maintained systems.",
+   "aliases": [
+    "lkm",
+    "plae tljg",
+    "plaetljg"
+   ],
+   "attrs": {},
+   "url": "https://github.com/plae-tljg"
+  },
+  {
+   "key": "project:finance-management",
+   "type": "project",
+   "name": "Finance Management",
+   "summary": "Offline personal finance apps: mobile, web, and a Lux variant.",
+   "aliases": [
+    "finance management",
+    "project finance management",
+    "financemanagement",
+    "projectfinancemanagement"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "project:voice-musa",
+   "type": "project",
+   "name": "Voice Cloning on MUSA",
+   "summary": "Voice cloning and TTS stacks ported to MooreThreads GPUs.",
+   "aliases": [
+    "voice cloning on musa",
+    "project voice musa",
+    "voicecloningonmusa",
+    "projectvoicemusa"
+   ],
+   "attrs": {},
+   "url": ""
+  },
+  {
+   "key": "topic:machine-learning",
+   "type": "topic",
+   "name": "Machine Learning",
+   "summary": "Projects that port, train, or apply ML models: TTS and voice conversion, RAG, and transformers.",
+   "aliases": [
+    "machine learning",
+    "topic machine learning",
+    "machinelearning",
+    "topicmachinelearning"
+   ],
+   "attrs": {},
+   "url": ""
+  }
+ ],
+ "links": [
+  {
+   "from": "plae-lkm/term-copilot",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "ellkaimu/AmazeFileUtilities",
+   "type": "uses_language",
+   "to": "language:kotlin"
+  },
+  {
+   "from": "plae-lkm/Match_Ethernet_Cable",
+   "type": "tagged",
+   "to": "topic:hardware"
+  },
+  {
+   "from": "plae-tljg/Math-Learning-Path",
+   "type": "tagged",
+   "to": "topic:summary"
+  },
+  {
+   "from": "LKM-Repo",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "plae-lkm/Type_As_If_You_Are_Working",
+   "type": "tagged",
+   "to": "topic:type-as-if-working"
+  },
+  {
+   "from": "plae-lkm/ubuntu_setup",
+   "type": "uses_language",
+   "to": "language:shell"
+  },
+  {
+   "from": "plae-lkm/term-copilot",
+   "type": "tagged",
+   "to": "topic:ai-assistants"
+  },
+  {
+   "from": "LKM-Repo/Graph_Chatbot",
+   "type": "tagged",
+   "to": "topic:graph-algorithms"
+  },
+  {
+   "from": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "ellkaimu/Sharedboard",
+   "type": "tagged",
+   "to": "topic:real-time"
+  },
+  {
+   "from": "plae-lkm/Dictionary-Anywhere",
+   "type": "tagged",
+   "to": "topic:dictionary"
+  },
+  {
+   "from": "LKM-Repo/lyrics_render",
+   "type": "tagged",
+   "to": "topic:gpu"
+  },
+  {
+   "from": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "tagged",
+   "to": "topic:machine-learning"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:phone"
+  },
+  {
+   "from": "plae-lkm/Finance_Lux_Web",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "tagged",
+   "to": "topic:gpu"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "uses_language",
+   "to": "language:c"
+  },
+  {
+   "from": "plae-lkm/Finance_Lux_Web",
+   "type": "tagged",
+   "to": "topic:rich-text"
+  },
+  {
+   "from": "LKM-Repo/Asterisk-Stress-Test",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "ellkaimu/FGA",
+   "type": "tagged",
+   "to": "topic:automation"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "tagged",
+   "to": "topic:phone"
+  },
+  {
+   "from": "plae-lkm/Type_As_If_You_Are_Working",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "plae-tljg/designer-is-dad",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "LKM-Repo/AI_Phishing_Playground",
+   "type": "tagged",
+   "to": "topic:template"
+  },
+  {
+   "from": "LKM-Repo/AI_Plan_Cost_Web",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "plae-lkm/term-copilot",
+   "type": "tagged",
+   "to": "topic:terminal"
+  },
+  {
+   "from": "plae-lkm/i_love_you_web",
+   "type": "tagged",
+   "to": "topic:i-love-you"
+  },
+  {
+   "from": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:android-app"
+  },
+  {
+   "from": "LKM-Repo/domain-ops-agent",
+   "type": "tagged",
+   "to": "topic:ai-agents"
+  },
+  {
+   "from": "LKM-Repo/so-vits-svc-musa",
+   "type": "tagged",
+   "to": "topic:so-vits-svc-fork"
+  },
+  {
+   "from": "LKM-Repo/lyrics_render",
+   "type": "tagged",
+   "to": "topic:subtitles"
+  },
+  {
+   "from": "ellkaimu/Sharedboard",
+   "type": "tagged",
+   "to": "topic:websocket"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:react"
+  },
+  {
+   "from": "LKM-Repo/AI_Plan_Cost_Web",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "ellkaimu/Image_Download_Organizer",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "plae-lkm/Type_As_If_You_Are_Working",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "plae-lkm/yinyang_generator",
+   "type": "tagged",
+   "to": "topic:joke"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "tagged",
+   "to": "topic:android-app"
+  },
+  {
+   "from": "LKM-Repo/Asterisk-Stress-Test",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "LKM-Repo/AI_Plan_Cost_Web",
+   "type": "uses_language",
+   "to": "language:javascript"
+  },
+  {
+   "from": "ellkaimu/FGA",
+   "type": "tagged",
+   "to": "topic:script"
+  },
+  {
+   "from": "plae-tljg/plae-tljg.github.io",
+   "type": "uses_language",
+   "to": "language:astro"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "tagged",
+   "to": "topic:machine-learning"
+  },
+  {
+   "from": "plae-lkm/ubuntu_setup",
+   "type": "tagged",
+   "to": "topic:software"
+  },
+  {
+   "from": "plae-lkm/Match_Ethernet_Cable",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "tagged",
+   "to": "topic:deepseek-harness"
+  },
+  {
+   "from": "plae-tljg/MaaFwPhoneAI",
+   "type": "uses_language",
+   "to": "language:kotlin"
+  },
+  {
+   "from": "plae-lkm/i_love_you_web",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "ellkaimu/Image_Download_Organizer",
+   "type": "tagged",
+   "to": "topic:android"
+  },
+  {
+   "from": "plae-lkm/Flush_Youtube_Account",
+   "type": "tagged",
+   "to": "topic:scripts"
+  },
+  {
+   "from": "LKM-Repo/domain-ops-agent",
+   "type": "tagged",
+   "to": "topic:templates"
+  },
+  {
+   "from": "ellkaimu/SSH-Management-App",
+   "type": "tagged",
+   "to": "topic:free"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "tagged",
+   "to": "topic:encoder-decoder-architecture"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:template"
+  },
+  {
+   "from": "plae-lkm/slow_life_web",
+   "type": "tagged",
+   "to": "topic:joke"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "uses_language",
+   "to": "language:typescript"
+  },
+  {
+   "from": "plae-lkm/Restart-Router",
+   "type": "tagged",
+   "to": "topic:scripts"
+  },
+  {
+   "from": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "tagged",
+   "to": "topic:musa"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "ellkaimu/camera-link",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "LKM-Repo/MUSA_GPU_Monitor",
+   "type": "tagged",
+   "to": "topic:gpu"
+  },
+  {
+   "from": "LKM-Repo/so-vits-svc-musa",
+   "type": "tagged",
+   "to": "topic:machine-learning"
+  },
+  {
+   "from": "LKM-Repo/MUSA_GPU_Monitor",
+   "type": "tagged",
+   "to": "topic:gpu-monitoring"
+  },
+  {
+   "from": "ellkaimu/Image_Download_Organizer",
+   "type": "tagged",
+   "to": "topic:image-processing"
+  },
+  {
+   "from": "plae-tljg/designer-is-dad",
+   "type": "tagged",
+   "to": "topic:game-2d"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "tagged",
+   "to": "topic:plugin"
+  },
+  {
+   "from": "LKM-Repo/Asterisk-Stress-Test",
+   "type": "tagged",
+   "to": "topic:stress-testing"
+  },
+  {
+   "from": "project:finance-management",
+   "type": "includes",
+   "to": "plae-tljg/Finance-Management-App"
+  },
+  {
+   "from": "plae-lkm/ThreeBodySystemAnimation",
+   "type": "uses_language",
+   "to": "language:c++"
+  },
+  {
+   "from": "ellkaimu/SSH-Management-App",
+   "type": "tagged",
+   "to": "topic:remote-control"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "tagged",
+   "to": "topic:transformers"
+  },
+  {
+   "from": "ellkaimu/SSH-Management-App",
+   "type": "uses_language",
+   "to": "language:dart"
+  },
+  {
+   "from": "plae-tljg/plae-tljg",
+   "type": "tagged",
+   "to": "topic:profile"
+  },
+  {
+   "from": "LKM-Repo/PIKE-RAG_Verbose",
+   "type": "tagged",
+   "to": "topic:learning-by-doing"
+  },
+  {
+   "from": "plae-tljg/plae-tljg.github.io",
+   "type": "tagged",
+   "to": "topic:personal-webpage"
+  },
+  {
+   "from": "plae-lkm/slow_life_web",
+   "type": "tagged",
+   "to": "topic:slow-life"
+  },
+  {
+   "from": "plae-lkm/yinyang_generator",
+   "type": "tagged",
+   "to": "topic:yinyang"
+  },
+  {
+   "from": "plae-lkm/ubuntu_setup",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "plae-tljg/MaaFwPhoneAI",
+   "type": "tagged",
+   "to": "topic:android-app"
+  },
+  {
+   "from": "ellkaimu/maaMines",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "plae-lkm/Restart-Router",
+   "type": "tagged",
+   "to": "topic:huawei"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "plae-tljg/designer-is-dad",
+   "type": "tagged",
+   "to": "topic:python"
+  },
+  {
+   "from": "plae-lkm/Match_Ethernet_Cable",
+   "type": "tagged",
+   "to": "topic:ethernet-cable"
+  },
+  {
+   "from": "plae-tljg/Math-Learning-Path",
+   "type": "tagged",
+   "to": "topic:math"
+  },
+  {
+   "from": "plae-tljg/plae-tljg",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "project:finance-management",
+   "type": "includes",
+   "to": "plae-lkm/Finance_Lux_Web"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "uses_language",
+   "to": "language:javascript"
+  },
+  {
+   "from": "ellkaimu/Sharedboard",
+   "type": "tagged",
+   "to": "topic:crdt"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:finance"
+  },
+  {
+   "from": "ellkaimu/FGA",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "LKM-Repo/lyrics_render",
+   "type": "tagged",
+   "to": "topic:asr"
+  },
+  {
+   "from": "ellkaimu/BiliDownload",
+   "type": "uses_language",
+   "to": "language:kotlin"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:localstorage"
+  },
+  {
+   "from": "ellkaimu/BiliDownload",
+   "type": "tagged",
+   "to": "topic:downloader"
+  },
+  {
+   "from": "ellkaimu/SSH-Management-App",
+   "type": "tagged",
+   "to": "topic:ssh"
+  },
+  {
+   "from": "plae-lkm/Dictionary-Anywhere",
+   "type": "tagged",
+   "to": "topic:browser"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "uses_language",
+   "to": "language:dart"
+  },
+  {
+   "from": "plae-tljg/plae-tljg.github.io",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "LKM-Repo/PIKE-RAG_Verbose",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "tagged",
+   "to": "topic:localstorage"
+  },
+  {
+   "from": "plae-tljg/MaaFwPhoneAI",
+   "type": "tagged",
+   "to": "topic:phoneai"
+  },
+  {
+   "from": "plae-lkm/Restart-Router",
+   "type": "tagged",
+   "to": "topic:router"
+  },
+  {
+   "from": "plae-lkm/Match_Ethernet_Cable",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "plae-lkm/i_love_you_web",
+   "type": "uses_language",
+   "to": "language:javascript"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "plae-lkm/ThreeBodySystemAnimation",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "plae-lkm/term-copilot",
+   "type": "tagged",
+   "to": "topic:copilot"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "ellkaimu/Sharedboard",
+   "type": "tagged",
+   "to": "topic:self-hosted"
+  },
+  {
+   "from": "ellkaimu/Sharedboard",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "LKM-Repo/lyrics_render",
+   "type": "tagged",
+   "to": "topic:lyrics"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:rapid-development"
+  },
+  {
+   "from": "LKM-Repo/AI_Phishing_Playground",
+   "type": "tagged",
+   "to": "topic:ai-agents"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "tagged",
+   "to": "topic:template"
+  },
+  {
+   "from": "ellkaimu/BiliDownload",
+   "type": "tagged",
+   "to": "topic:videos"
+  },
+  {
+   "from": "LKM-Repo/AI_Phishing_Playground",
+   "type": "tagged",
+   "to": "topic:phishing-script"
+  },
+  {
+   "from": "plae-lkm/ThreeBodySystemAnimation",
+   "type": "tagged",
+   "to": "topic:animation"
+  },
+  {
+   "from": "plae-tljg/Math-Learning-Path",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "LKM-Repo/Graph_Chatbot",
+   "type": "uses_language",
+   "to": "language:javascript"
+  },
+  {
+   "from": "plae-lkm/ubuntu_setup",
+   "type": "tagged",
+   "to": "topic:maniac"
+  },
+  {
+   "from": "plae-lkm/Type_As_If_You_Are_Working",
+   "type": "uses_language",
+   "to": "language:html"
+  },
+  {
+   "from": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "tagged",
+   "to": "topic:moore-threads"
+  },
+  {
+   "from": "ellkaimu/maaMines",
+   "type": "tagged",
+   "to": "topic:minesweeper"
+  },
+  {
+   "from": "LKM-Repo/so-vits-svc-musa",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "tagged",
+   "to": "topic:deepseek"
+  },
+  {
+   "from": "plae-lkm/Finance_Lux_Web",
+   "type": "tagged",
+   "to": "topic:template"
+  },
+  {
+   "from": "plae-lkm/i_love_you_web",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "project:voice-musa",
+   "type": "includes",
+   "to": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa"
+  },
+  {
+   "from": "plae-lkm/Finance_Lux_Web",
+   "type": "uses_language",
+   "to": "language:typescript"
+  },
+  {
+   "from": "plae-lkm/Capture_Running_Terminal",
+   "type": "tagged",
+   "to": "topic:terminal"
+  },
+  {
+   "from": "plae-lkm/Flush_Youtube_Account",
+   "type": "tagged",
+   "to": "topic:flush-account"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "tagged",
+   "to": "topic:anime-downloader"
+  },
+  {
+   "from": "plae-lkm/yinyang_generator",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "LKM-Repo/lyrics_render",
+   "type": "tagged",
+   "to": "topic:video"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "tagged",
+   "to": "topic:c"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:react-native"
+  },
+  {
+   "from": "plae-lkm/Flush_Youtube_Account",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "ellkaimu/maaMines",
+   "type": "tagged",
+   "to": "topic:automation"
+  },
+  {
+   "from": "plae-lkm/Capture_Running_Terminal",
+   "type": "tagged",
+   "to": "topic:terminal-track"
+  },
+  {
+   "from": "plae-lkm/ubuntu_setup",
+   "type": "tagged",
+   "to": "topic:ubuntu"
+  },
+  {
+   "from": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "tagged",
+   "to": "topic:svc"
+  },
+  {
+   "from": "LKM-Repo/so-vits-svc-musa",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "plae-tljg/designer-is-dad",
+   "type": "tagged",
+   "to": "topic:game"
+  },
+  {
+   "from": "ellkaimu/Image_Download_Organizer",
+   "type": "tagged",
+   "to": "topic:file-grouping"
+  },
+  {
+   "from": "LKM-Repo/Asterisk-Stress-Test",
+   "type": "tagged",
+   "to": "topic:python"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "tagged",
+   "to": "topic:js"
+  },
+  {
+   "from": "ellkaimu/SSH-Management-App",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "LKM-Repo/PIKE-RAG_Verbose",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "LKM-Repo/AI_Plan_Cost_Web",
+   "type": "tagged",
+   "to": "topic:cost-tracking"
+  },
+  {
+   "from": "LKM-Repo/Asterisk-Stress-Test",
+   "type": "tagged",
+   "to": "topic:asterisk"
+  },
+  {
+   "from": "LKM-Repo/lyrics_render",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "LKM-Repo/PIKE-RAG_Verbose",
+   "type": "tagged",
+   "to": "topic:machine-learning"
+  },
+  {
+   "from": "ellkaimu/Finance-Management-Web",
+   "type": "uses_language",
+   "to": "language:typescript"
+  },
+  {
+   "from": "plae-lkm/slow_life_web",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "plae-lkm",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "LKM-Repo/Graph_Chatbot",
+   "type": "tagged",
+   "to": "topic:chatbot"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "tagged",
+   "to": "topic:sample"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:typescript"
+  },
+  {
+   "from": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "tagged",
+   "to": "topic:machine-learning"
+  },
+  {
+   "from": "plae-lkm/Capture_Running_Terminal",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "plae-tljg/MaaFwPhoneAI",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "plae-lkm/Capture_Running_Terminal",
+   "type": "tagged",
+   "to": "topic:python"
+  },
+  {
+   "from": "plae-tljg/MaaFwPhoneAI",
+   "type": "tagged",
+   "to": "topic:android"
+  },
+  {
+   "from": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "tagged",
+   "to": "topic:musa"
+  },
+  {
+   "from": "plae-tljg/Math-Learning-Path",
+   "type": "uses_language",
+   "to": "language:astro"
+  },
+  {
+   "from": "plae-lkm/Finance_Lux_Web",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "LKM-Repo/MUSA_GPU_Monitor",
+   "type": "tagged",
+   "to": "topic:moorethreads"
+  },
+  {
+   "from": "ellkaimu/Image_Download_Organizer",
+   "type": "tagged",
+   "to": "topic:organizer"
+  },
+  {
+   "from": "plae-tljg/designer-is-dad",
+   "type": "tagged",
+   "to": "topic:game-of-life"
+  },
+  {
+   "from": "plae-lkm/Finance_Lux_Web",
+   "type": "tagged",
+   "to": "topic:finance"
+  },
+  {
+   "from": "plae-lkm/Dictionary-Anywhere",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "plae-tljg/Math-Learning-Path",
+   "type": "tagged",
+   "to": "topic:learning"
+  },
+  {
+   "from": "plae-lkm/Type_As_If_You_Are_Working",
+   "type": "tagged",
+   "to": "topic:joke"
+  },
+  {
+   "from": "plae-lkm/Restart-Router",
+   "type": "uses_language",
+   "to": "language:javascript"
+  },
+  {
+   "from": "ellkaimu/AmazeFileUtilities",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "LKM-Repo/lyrics_render",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "LKM-Repo/Graph_Chatbot",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "LKM-Repo/so-vits-svc-musa",
+   "type": "tagged",
+   "to": "topic:moore-threads"
+  },
+  {
+   "from": "ellkaimu/Sharedboard",
+   "type": "tagged",
+   "to": "topic:collaborative-editor"
+  },
+  {
+   "from": "project:voice-musa",
+   "type": "includes",
+   "to": "LKM-Repo/so-vits-svc-musa"
+  },
+  {
+   "from": "plae-tljg/Finance-Management-App",
+   "type": "tagged",
+   "to": "topic:finance-management"
+  },
+  {
+   "from": "LKM-Repo/AI_Phishing_Playground",
+   "type": "tagged",
+   "to": "topic:ai"
+  },
+  {
+   "from": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "LKM-Repo/Graph_Chatbot",
+   "type": "tagged",
+   "to": "topic:llm"
+  },
+  {
+   "from": "ellkaimu/BiliDownload",
+   "type": "tagged",
+   "to": "topic:bilibili"
+  },
+  {
+   "from": "LKM-Repo/domain-ops-agent",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "ellkaimu/Image_Download_Organizer",
+   "type": "uses_language",
+   "to": "language:kotlin"
+  },
+  {
+   "from": "plae-tljg/MaaFwPhoneAI",
+   "type": "tagged",
+   "to": "topic:maafw"
+  },
+  {
+   "from": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "tagged",
+   "to": "topic:moorethreads"
+  },
+  {
+   "from": "plae-lkm/Finance_Lux_Web",
+   "type": "tagged",
+   "to": "topic:ui-design"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "ellkaimu/FGA",
+   "type": "tagged",
+   "to": "topic:fgo"
+  },
+  {
+   "from": "ellkaimu/Finance-Management-Web",
+   "type": "tagged",
+   "to": "topic:finance"
+  },
+  {
+   "from": "plae-lkm/Flush_Youtube_Account",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "plae-lkm/yinyang_generator",
+   "type": "uses_language",
+   "to": "language:javascript"
+  },
+  {
+   "from": "ellkaimu/Finance-Management-Web",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "ellkaimu/BiliDownload",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "plae-lkm/Restart-Router",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "ellkaimu/BiliDownload",
+   "type": "tagged",
+   "to": "topic:video-downloader"
+  },
+  {
+   "from": "plae-lkm/i_love_you_web",
+   "type": "tagged",
+   "to": "topic:joke"
+  },
+  {
+   "from": "LKM-Repo/domain-ops-agent",
+   "type": "tagged",
+   "to": "topic:domain-driven-design"
+  },
+  {
+   "from": "LKM-Repo/domain-ops-agent",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "plae-lkm/ThreeBodySystemAnimation",
+   "type": "tagged",
+   "to": "topic:3-body-problem"
+  },
+  {
+   "from": "ellkaimu/maaMines",
+   "type": "owned_by",
+   "to": "ellkaimu"
+  },
+  {
+   "from": "LKM-Repo/MUSA_GPU_Monitor",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "plae-lkm/Dictionary-Anywhere",
+   "type": "uses_language",
+   "to": "language:html"
+  },
+  {
+   "from": "plae-lkm/Dictionary-Anywhere",
+   "type": "tagged",
+   "to": "topic:addon"
+  },
+  {
+   "from": "ellkaimu",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "ellkaimu/maaMines",
+   "type": "tagged",
+   "to": "topic:maa"
+  },
+  {
+   "from": "ellkaimu/camera-link",
+   "type": "uses_language",
+   "to": "language:kotlin"
+  },
+  {
+   "from": "plae-tljg/designer-is-dad",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "LKM-Repo/GPT-SoVITS-Musa",
+   "type": "tagged",
+   "to": "topic:gpt-sovits"
+  },
+  {
+   "from": "plae-tljg/dsh-review",
+   "type": "tagged",
+   "to": "topic:addon"
+  },
+  {
+   "from": "ellkaimu/BiliDownload",
+   "type": "tagged",
+   "to": "topic:android"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "tagged",
+   "to": "topic:anime"
+  },
+  {
+   "from": "plae-tljg",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "plae-lkm/Flush_Youtube_Account",
+   "type": "tagged",
+   "to": "topic:youtube"
+  },
+  {
+   "from": "LKM-Repo/AI_Phishing_Playground",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "plae-lkm/yinyang_generator",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "plae-lkm/Capture_Running_Terminal",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "LKM-Repo/domain-ops-agent",
+   "type": "tagged",
+   "to": "topic:transactions"
+  },
+  {
+   "from": "ellkaimu/SSH-Management-App",
+   "type": "tagged",
+   "to": "topic:phone-app"
+  },
+  {
+   "from": "plae-lkm/ThreeBodySystemAnimation",
+   "type": "tagged",
+   "to": "topic:cpp"
+  },
+  {
+   "from": "LKM-Repo/MUSA_GPU_Monitor",
+   "type": "owned_by",
+   "to": "LKM-Repo"
+  },
+  {
+   "from": "plae-tljg/Math-Learning-Path",
+   "type": "owned_by",
+   "to": "plae-tljg"
+  },
+  {
+   "from": "plae-tljg/plae-tljg.github.io",
+   "type": "tagged",
+   "to": "topic:lkm"
+  },
+  {
+   "from": "plae-lkm/slow_life_web",
+   "type": "uses_language",
+   "to": "language:javascript"
+  },
+  {
+   "from": "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa",
+   "type": "tagged",
+   "to": "topic:sovits"
+  },
+  {
+   "from": "ellkaimu/FGA",
+   "type": "uses_language",
+   "to": "language:kotlin"
+  },
+  {
+   "from": "LKM-Repo/PIKE-RAG_Verbose",
+   "type": "tagged",
+   "to": "topic:learning"
+  },
+  {
+   "from": "LKM-Repo/AI_Plan_Cost_Web",
+   "type": "tagged",
+   "to": "topic:ai"
+  },
+  {
+   "from": "plae-lkm/Match_Ethernet_Cable",
+   "type": "tagged",
+   "to": "topic:color-matching"
+  },
+  {
+   "from": "ellkaimu/Anime-Webview",
+   "type": "tagged",
+   "to": "topic:flutter-apps"
+  },
+  {
+   "from": "plae-lkm/slow_life_web",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "ellkaimu/SSH-Management-App",
+   "type": "tagged",
+   "to": "topic:sftp"
+  },
+  {
+   "from": "LKM-Repo/Transformer-Implementation-C-Python",
+   "type": "tagged",
+   "to": "topic:tutorial"
+  },
+  {
+   "from": "ellkaimu/Sharedboard",
+   "type": "uses_language",
+   "to": "language:python"
+  },
+  {
+   "from": "plae-tljg/plae-tljg",
+   "type": "tagged",
+   "to": "topic:readme"
+  },
+  {
+   "from": "LKM-Repo/PIKE-RAG_Verbose",
+   "type": "tagged",
+   "to": "topic:pike-rag"
+  },
+  {
+   "from": "plae-tljg/plae-tljg.github.io",
+   "type": "tagged",
+   "to": "topic:web"
+  },
+  {
+   "from": "plae-lkm/term-copilot",
+   "type": "owned_by",
+   "to": "plae-lkm"
+  },
+  {
+   "from": "project:finance-management",
+   "type": "includes",
+   "to": "ellkaimu/Finance-Management-Web"
+  },
+  {
+   "from": "plae-lkm/Restart-Router",
+   "type": "tagged",
+   "to": "topic:restart-script"
+  },
+  {
+   "from": "LKM-Repo/AI_Phishing_Playground",
+   "type": "uses_language",
+   "to": "language:shell"
+  },
+  {
+   "from": "project:voice-musa",
+   "type": "includes",
+   "to": "LKM-Repo/GPT-SoVITS-Musa"
+  }
+ ],
+ "documents": [
+  {
+   "slug": "readme:plae-tljg/Finance-Management-App",
+   "title": "Finance-Management-App",
+   "body": "# 财务管理助手\n\n一个简单易用的个人财务管理应用，帮助您追踪日常收支、管理预算和分类支出。\n\n## 关于本项目模板\n\n本项目是一个面向个人开发者的财务管理应用模板。你可以直接在此基础上进行二次开发，无需担心项目结构、DDD（领域驱动设计）分层或文件夹组织等问题。所有基础架构和目录结构都已为你设计好，方便你专注于实现自己的业务逻辑和界面需求，快速搭建属于你的财务管理工具。\n\n## 界面展示\n\n### 主页界面\n<table>\n<tr>\n<td><img src=\"assets/gui_img/homepage_new.jpg\" width=\"280\" alt=\"主页界面\"></td>\n<td><img src=\"assets/gui_img/detail_page_new.jpg\" width=\"280\" alt=\"第二页1界面\"></td>\n</tr>\n</table>\n\n### 调试界面和数据库管理\n<table>\n<tr>\n<td><img src=\"assets/gui_img/debug.jpg\" width=\"250\" alt=\"调试界面\"></td>\n<td><img src=\"assets/gui_img/sql1.jpg\" width=\"250\" alt=\"数据库管理\"></td>\n<td><img src=\"assets/gui_img/sql2.jpg\" width=\"250\" alt=\"数据库查询\"></td>\n</tr>\n</table>\n\n## 主要功能\n\n### 1. 交易管理\n- 记录日常收入和支出\n- 支持按日期、金额、分类筛选交易记录\n- 查看交易历史记录和统计\n\n### 2. 预算管理\n- 设置月度预算\n- 按分类设置预算限额\n- 实时监控预算使用情况\n- 预算超支提醒\n\n### 3. 分类管理\n- 自定义收入和支出分类\n- 灵活调整分类结构\n- 支持分类图标和颜色设置\n\n### 4. 数据可视化\n- 周度支出趋势图表\n- 分类支出占比分析\n- 预算执行情况图表\n\n### 5. 数据安全\n- 本地数据存储\n- 数据备份和恢复\n- 隐私保护  \n\n### 6. Web 模式（局域网访问）\n\n应用内置一个轻量级 HTTP 服务器（基于 [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd)）。打开后，手机会在 LAN 上托管完整的 Web 版应用，任何同 Wi-Fi 下的浏览器都能扫码或输入 URL 访问、实时编辑数据，无需切换应用或安装 Termux。\n\n**怎么用：**\n- 设置 → **Web 模式** → 打开开关\n- 手机会显示一个 URL（含 PIN，例如 `http://192.168.x.x:8080/?token=1234`）和二维码\n- 任何同 Wi-Fi 的浏览器扫码或输入 URL 即可访问\n- 浏览器里所有改动通过 REST API 写入本机 SQLite，原生应用自动同步刷新\n- 关闭开关后服务立即停止；切到后台超过 5 分钟也会自动停止以省电，回到前台自动重启\n\n**架构：**\n- 原生侧：Kotlin 的 `FinanceHttpServer`（`android/.../webserver/`）从 APK 内嵌的 `assets/web/` 提供 Expo Web 打包产物，并暴露 `/api/*` REST 端点代理到同一个 SQLite 文件\n- Web 侧：`WebDatabase`（`services/database/web/WebDatabase.ts`）拦截 SQL 调用，转成对原生 HTTP 服务的 REST 请求；`useDatabaseSetup.web.ts` 启动时从 URL 的 `?token=` 拿到 PIN 并设为 Bearer 头\n- 两者共享同一份 `FinanceManager.db` —— 浏览器写的，原生立刻能看见；原生写的，浏览器刷新就能看见\n\n**安全：** PIN 每次开关都重新生成，不广播；服务只在本机 0.0.0.0 监听，不出公网。\n\n**开发构建小贴士：** 修改了 Web 模式相关代码后，需要重新导出 Web bundle 并嵌入到 APK 中（gradle 不会自动做这步）：\n\n```bash\nbash scripts/build-web.sh   # git-bash / Linux / Mac\n# 或 PowerShell：\n#   Remove-Item dist -Recurse -Force\n#   npx expo export --platform web\n#   Remove-Item android\\app\\src\\main\\assets\\web -Recurse -Force\n#   Copy-Item dist android\\app\\src\\main\\assets\\web -Recurse -Force\n```\n\n然后再 `npm run android` 重新打 APK。详见 [`docs/DEBUG.md`](docs/DEBUG.md) 的「When do I need to rebuild the web bundle?」一节。\n\n完整使用说明与故障排查见 [`docs/DEBUG.md`](docs/DEBUG.md)。\n\n## 使用指南\n\n### 添加交易\n1. 点击底部导航栏的\"+\"按钮\n2. 选择交易类型（收入/支出）\n3. 输入金额和选择分类\n4. 添加备注（可选）\n5. 点击保存\n\n### 设置预算\n1. 进入\"设置\"页面\n2. 选择\"预算管理\"\n3. 点击\"添加预算\"\n4. 设置预算金额和分类\n5. 点击保存\n\n### 管理分类\n1. 进入\"设置\"页面\n2. 选择\"分类管理\"\n3. 点击\"添加分类\"\n4. 设置名称、类型和图标\n5. 点击保存\n\n## 隐私说明\n- 所有数据仅存储在您的设备本地\n- 不会收集任何个人信息\n- 不会上传任何数据到服务器\n\n## 支持\nMentally Support\n\n## 开发者提示\n\n完整开发流程、env vars、logcat 过滤器、Web 模式测试步骤、常见故障见 [`docs/DEBUG.md`](docs/DEBUG.md)。\n\n### Web 模式构建\n\nWeb 模式需要在 Android APK 中捆绑 Expo 的 Web 构建产物。推荐流程：\n\n```powershell\n# 1. 生成 web bundle\nnpx expo export --platform web --output-dir dist\n\n# 2. 复制到 APK 资产目录\nRemove-Item android\\app\\src\\main\\assets\\web -Recurse -Force\nCopy-Item dist android\\app\\src\\main\\assets\\web -Recurse -Force\n\n# 3. 构建 debug 或 release APK\nnpm run android\n# 或\ncd android ; .\\gradlew.bat :app:assembleRelease\n```\n\nAPK 中的 Kotlin HTTP 服务器（`webserver/FinanceHttpServer.kt`）会从 `assets/web/` 提供静态文件与 `/api/*` REST 端点。\n\n**Web bundle 必须不包含 `expo-sqlite`** —— 浏览器里没有原生模块桥。`metro.config.js` 已把 web 打包时的 `expo-sqlite` 替换成 `web/expo-sqlite.web.stub.js`，并要求：\n- 业务代码不要顶层 `import` `expo-sqlite`（类型用 `import type`）\n- 平台相关初始化用 `*.native.tsx` / `*.web.tsx` 让 Metro 自行选择\n\n### 故障排查\n\n- **看不到 Web 模式菜单**：确认运行的是 Android 原生构建（`expo run:android` 或 `eas build`），而非 Expo Go。\n- **开关打开后立即关闭**：检查 `MainApplication.kt` 中 `WebServerPackage` 是否注册。\n- **浏览器无法连接**：确认手机与目标设备在同一 Wi-Fi，且网络未隔离客户端（部分公共 Wi-Fi 启用 AP 隔离）。\n- **401 Unauthorized**：浏览器 URL 必须带 `?token=<PIN>`，从手机 Web 模式页面点链接或扫码。\n- **PIN 错误**：每次打开开关都会生成新的 PIN；浏览器中请使用最新的。\n- **数据不同步**：浏览器走的是 REST API，原生应用走 `expo-sqlite`，两者共享同一 SQLite 文件。若浏览器看不到最新数据，刷新浏览器即可。\n- **空白页 / `Cannot find native module 'ExpoSQLite'`**：`expo-sqlite` 漏到 web 包了。检查 `metro.config.js` 别名、平台相关文件分离。\n\n更详细的故障排查见 [`docs/DEBUG.md`](docs/DEBUG.md)。",
+   "entity_key": "plae-tljg/Finance-Management-App"
+  },
+  {
+   "slug": "readme:ellkaimu/Anime-Webview",
+   "title": "Anime-Webview",
+   "body": "# Anime WebView 安卓应用\n\n本项目将一个动漫集合网页封装为安卓 WebView 应用，并增加了离线下载、内置调试和简易去广告播放功能。\n\n## 🌟 核心特性\n\n- **内置调试控制台**  \n  应用内集成本地调试屏幕，自动收集所有调试日志。非常适合喜欢 DIY 调试的开发者，无需连接电脑即可查看运行信息。\n\n- **动漫视频离线下载**  \n  通过模拟网页“检查元素”行为，自动提取页面中 CDN 提供的 MP4 直链，并支持下载到本地存储，实现离线观看。\n\n- **纯净视频播放模式**  \n  播放时会清理原网页内容，仅保留 `<video>` 元素（类似手动删除页面其他部分再插入视频），从而绕过广告干扰。  \n  > ⚠️ 注意：此功能目前尚不稳定，部分网站可能无法正常播放。\n\n## 📁 项目结构\n\n```bash\nlib/  \n  ├── core/                 # 核心功能  \n  │   ├── config/          # 配置  \n  │   ├── debug/           # 调试工具  \n  │   ├── di/              # 依赖注入  \n  │   ├── error/           # 错误处理  \n  │   └── services/        # 核心服务  \n  ├── data/                # 数据层  \n  │   ├── models/          # 数据模型  \n  │   ├── repositories/    # 仓库实现  \n  │   └── services/        # 数据服务  \n  ├── domain/              # 领域层  \n  │   ├── entities/        # 实体  \n  │   └── repositories/    # 仓库接口  \n  ├── presentation/        # 表现层  \n  │   ├── screens/         # 页面  \n  │   ├── widgets/         # 组件  \n  │   └── providers/       # 状态管理  \n  └── utils/               # 工具类\n```\n\n## 🆓 使用声明\n\n随便用\n",
+   "entity_key": "ellkaimu/Anime-Webview"
+  },
+  {
+   "slug": "readme:LKM-Repo/domain-ops-agent",
+   "title": "domain-ops-agent",
+   "body": "# Domain Ops Agent\n\n> A kit for building AI agents whose **action space is a domain's valid\n> operations** — transactional, invariant-preserving, approval-gated, and\n> verifiable — instead of the raw rows underneath them.\n\n*(Working title. The repo is intentionally a portable, adaptable kit, not a\npip-installable framework.)*\n\n## The one-sentence thesis\n\nA general coding agent sees a change as an **action** (write a file, call an\nendpoint). A domain ops agent sees a change as an **invariant set** — a group\nof coupled records across several tables that must move together or not at\nall. This kit is how you give an agent that second view.\n\n## Who this is for\n\nYou are building an agent that operates on a system where **data is coupled\nacross tables** and **partial changes are invalid**: renaming an entity and\nforgetting everything that references it, applying half of a migration,\nleaving a dangling foreign key. Examples: ERP, healthcare, finance, telecom\ncallflows, catalog/inventory, bioinformatics.\n\nIf your agent only edits documents or makes independent API calls, you do not\nneed this. The discipline is overhead where there are no invariants.\n\n## How to use this repo\n\nThis is an **adaptation kit**. You do not `pip install` it. You point your\ncoding agent (opencode, Claude Code, Codex, …) at this repo and ask it to\nport the discipline into your project.\n\n1. Read `AGENTS.md` — the operating rules your agent must follow.\n2. Read `docs/CONCEPTS.md` — the vocabulary: levels, the Operation contract,\n   the Operation Manifest.\n3. Follow `docs/PORTING.md` — the step-by-step playbook, worked through a\n   self-contained library/catalog example.\n4. Load the skills in `skills/` as your agent works (see below).\n\n## Wiring the skills\n\nEach directory under `skills/` is an [Agent Skill](https://code.claude.com/docs/en/skills)\n— a `SKILL.md` with frontmatter and a focused procedure.\n\n- **opencode**: copy/symlink `skills/*` into `.opencode/skills/`.\n- **Claude Code**: copy/symlink into `.claude/skills/` (or `~/.claude/skills/`).\n- **Codex / others**: include the relevant `SKILL.md` in the agent's context,\n  or paste it into the task prompt.\n\nThey are plain Markdown; any agent that can read files can use them.\n\n## Repo map\n\n| Path | What it is |\n|------|------------|\n| `MANIFESTO.md` | The philosophy: why decoupling the agent from the domain fails. |\n| `AGENTS.md` | Operating rules + porting workflow for the coder's AI. |\n| `docs/CONCEPTS.md` | Levels, the Operation contract, the Operation Manifest, the approval lifecycle. |\n| `docs/PORTING.md` | Numbered playbook over a library/catalog domain; in-process and service paths. |\n| `docs/WIRE_CONTRACT.md` | The transport-agnostic manifest, plan/apply, and event shapes. |\n| `skills/` | Focused procedures the coder's AI loads while porting. |\n\n## The three load-bearing ideas\n\n1. **Valid operations are the action space.** The agent may call tissue-,\n   organ-, and organ-system-level operations only — never cellular CRUD. The\n   model chooses among operations that are already transactional and\n   invariant-preserving.\n2. **The Operation Manifest is the contract that survives decoupling.**\n   Derived from code decorators, it declares the level, invariants, reference\n   coverage, transaction boundary, and verification. Agent tools are\n   *generated* from it, so the discipline is literally in the schema. Core\n   operations ride every call; the rest load on demand by group as the\n   library grows. A bare API without a manifest is disallowed.\n3. **Two transports, one contract.** In-process (a callable) and remote\n   (`GET /operations` + `POST /operations/{name}/plan|apply`) share the same\n   manifest and the same `plan → approve → apply → verify` lifecycle.\n\n## Using the core\n\n```python\nfrom domain_ops_agent import (\n    Invariant, OperationRegistry, OperationRuntime, OperationContext,\n    OperationSurface, operation,\n)\n\nregistry = OperationRegistry()\n\n@operation(\n    name=\"rename_author\",\n    version=1,\n    level=\"organ_system\",\n    description=\"Rename an author and rewrite every denormalized copy.\",\n    params={\"type\": \"object\", \"properties\": {\"author_id\": {\"type\": \"string\"},\n                                             \"new_name\": {\"type\": \"string\"}},\n            \"required\": [\"author_id\", \"new_name\"]},\n    preconditions=[Invariant(\"author exists\", lambda ctx, p: p[\"author_id\"] in ctx.services[\"db\"].authors)],\n    postconditions=[Invariant(\"index matches\", lambda ctx, p: ctx.services[\"db\"].index_names_match(p[\"author_id\"]))],\n    reference_coverage=[(\"catalog_index.author_name\", \"rewrite\")],\n    transaction_boundary=\"author + catalog_index\",\n    registry=registry,\n)\ndef rename_author(ctx: OperationContext, params: dict):\n    db = ctx.services[\"db\"]\n    db.rename_author(params[\"author_id\"], params[\"new_name\"])\n    return {\"renamed\": params[\"author_id\"]}\n\nruntime = OperationRuntime(registry)\n\nsurface = OperationSurface(registry)\ntools = surface.core_tools()        # what the model sees on every call\ncatalog = surface.catalog_text()    # always in the prompt\n\nplan = runtime.plan(\"rename_author\", {\"author_id\": \"a1\", \"new_name\": \"Ada\"})  # writes nothing\nresult = runtime.apply(plan.plan_id)                                          # after approval\nassert result.verification.ok\nruntime.revert(result.revert_token)                                           # restore\n```\n\nThe same contract runs behind an API via `RemoteOperationClient`\n(`GET /operations`, `POST /operations/{name}/plan|apply`).\n\n## Examples\n\nThe `examples/` directory has a runnable **library/catalog** domain that\ndemonstrates a cross-table cascade (`rename_author`, `merge_authors`,\n`delete_book`).\n\n```bash\npip install -e .            # or run with PYTHONPATH=src\n\n# in-process lifecycle: plan -> apply -> verify -> revert\npython examples/library_catalog/demo.py\n\n# remote transport: a stdlib operation service + the HTTP client\npython examples/service/service.py        # serve on :8765 (approval UI at /)\npython examples/service/remote_demo.py    # drives it end to end\n```\n\nWith the service running, open `http://127.0.0.1:8765/` for the minimal\napproval UI: pick an operation, plan, review the diff, approve, see the\nverification, and revert. It is plain HTML/JS with no build step — copy it as\na starting point for your own review surface.\n\n## Status and roadmap\n\n- **v0 — documentation + `AGENTS.md` + skills.** Done.\n- **v1 — domain-neutral core.** Done: `Operation`, `Invariant`, `Cascade`,\n  `UnitOfWork` (transaction seam), `OperationManifest`, the `@operation`\n  decorator, the plan/apply/verify runtime, and in-process + remote transport\n  adapters. See `src/domain_ops_agent/` and `tests/`.\n- **v2 — reference domain + examples.** Done: a runnable `library-catalog`\n  domain (`examples/library_catalog/`) with three cascade operations, an\n  in-process demo, a stdlib operation service (`examples/service/service.py`),\n  and a remote-transport demo.\n- **v3 — optional minimal approval UI.** Done: a plain HTML/JS review surface\n  at `examples/approval_ui/index.html`, served by the operation service at `/`,\n  plus a `POST /revert` endpoint. No build step; copy it as a starting point.\n- **v4 — progressive operation exposure.** Done: `group`/`exposure` manifest\n  fields, registry catalog/group queries, and `OperationSurface` (catalog +\n  core tools + `load_operations` for on-demand groups). Docs, a porting\n  skill, and the library example cover the pattern.\n\n## License\n\nMIT (see `LICENSE`).\n",
+   "entity_key": "LKM-Repo/domain-ops-agent"
+  },
+  {
+   "slug": "readme:plae-lkm/ubuntu_setup",
+   "title": "ubuntu_setup",
+   "body": "# Guide\n\nLKM page for setting up his Ubuntu  \n\nGitHub Page: [https://plae-tljg.github.io/ubuntu_setup/](https://plae-tljg.github.io/ubuntu_setup/)\n\n\n![From Bilibili](docs/.vuepress/public/img/1754893223417.gif)  \n_Image source: [https://www.bilibili.com/video/BV1ZRhTz2EWA/](https://www.bilibili.com/video/BV1ZRhTz2EWA/)_\n\n\n\n## Setup Guide\n\nfor setting up ubuntu  \n\n```bash\nnpm install\nnpm run docs:dev\n```\n\nif want to deploy to github page, please use:  \n\n```bash\n./deploy-gh-pages.sh\n```\n\nRemember that deploying will delete `node_modules`, so need do again\n\n```bash\nnpm install\n```\n",
+   "entity_key": "plae-lkm/ubuntu_setup"
+  },
+  {
+   "slug": "readme:ellkaimu/SSH-Management-App",
+   "title": "SSH-Management-App",
+   "body": "# SSH Manager\n\n一个功能强大的SSH客户端应用，支持终端操作和文件管理。\n\n## 主要功能\n\n- 🔐 安全的SSH连接管理\n- 📁 直观的文件管理器\n- 💻 内置终端\n- 📤 文件上传/下载\n- 🔄 实时文件同步\n- 📱 支持Android设备\n\n## 快速开始\n\n### 安装\n\n1. 从 [Release](https://github.com/yourusername/ssh_app/releases) 页面下载最新版本\n2. 安装APK文件\n3. 授予必要的权限\n\n### 使用指南\n\n#### 1. 添加SSH连接\n\n1. 点击\"+\"按钮添加新连接\n2. 填写连接信息：\n   - 连接名称（方便识别）\n   - 主机地址\n   - 端口（默认22）\n   - 用户名\n   - 密码或私钥\n\n#### 2. 文件管理\n\n- 浏览文件：点击文件夹进入\n- 上传文件：点击上传按钮或使用文件列表中的上传选项\n- 下载文件：长按文件选择下载\n- 创建文件夹：点击创建文件夹按钮\n- 删除文件：长按文件选择删除\n\n#### 3. 终端操作\n\n- 打开终端：点击连接列表中的终端图标\n- 执行命令：直接在终端中输入\n- 复制/粘贴：长按选择文本\n\n## 常见问题\n\n### 连接问题\n\nQ: 无法连接到服务器？\nA: 请检查：\n- 网络连接是否正常\n- 服务器地址和端口是否正确\n- 用户名和密码是否正确\n- 服务器是否允许SSH连接\n\n### 文件操作问题\n\nQ: 无法上传/下载文件？\nA: 请检查：\n- 存储权限是否已授予\n- 目标目录是否有写入权限\n- 文件是否被其他程序占用\n\n### 权限问题\n\nQ: 应用需要哪些权限？\nA: 应用需要以下权限：\n- 存储权限：用于文件操作\n- 网络权限：用于SSH连接\n\n## 隐私说明\n\n- 所有连接信息都存储在本地\n- 不会收集或上传任何用户数据\n- 支持加密存储敏感信息\n\n## 支持与反馈\n\n- 问题报告：请使用 [Issues](https://github.com/yourusername/ssh_app/issues)\n- 功能建议：欢迎提交 [Pull Request](https://github.com/yourusername/ssh_app/pulls)\n- 邮件支持：your.email@example.com\n\n## 更新日志\n\n### v1.0.0\n- 初始版本发布\n- 支持基本的SSH连接\n- 实现文件管理功能\n- 添加终端功能\n\n## 许可证\n\n本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件\n",
+   "entity_key": "ellkaimu/SSH-Management-App"
+  },
+  {
+   "slug": "readme:plae-tljg/dsh-review",
+   "title": "dsh-review",
+   "body": "# dsh-review\n\nAn opencode-style **Review** panel for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web GUI's right sidebar. One plugin owns both ends of its data path — a `git` service on the Host and a `review` tab in the browser — and shows the session workspace four ways:\n\n- **Uncommitted** — the working tree against `HEAD`, as a directory tree of every changed file, with per-file `+added`/`-removed`, the branch's grand total, and the selected file's unified diff in red/green.\n- **Rounds** — what the agent changed in each conversation round, derived from the live conversation snapshot, shown with the same tree and the same diff body.\n- **Commits** — the recent commit history, newest first; a commit expands to the tree of files it touched, with its own counts, and selecting a file shows that path's diff *within* that commit. Commit files are read lazily, only when a commit is opened.\n- **Files** — a plain workspace browser: the tree of the workspace's files, **including git-ignored ones** such as `.env` (`git ls-files --cached --others` plus `--ignored`), with the heavy generated directories (`node_modules`, `__pycache__`, virtualenvs) left out; the selected file's content on the right, and an **opt-in editor** (off by default) for direct edits. Folders start collapsed with an expand-all/collapse-all control, and the file rail is **draggable** to widen or narrow.\n\n```\n┌ 审阅 ────────────────────────────────────────────────────────┐\n│  [ 文件 | 未提交 | 按轮次 | 按提交 ]  main ↑1   +42 -7     ⟳   │\n├──────────────────────┬───────────────────────────────────────┤\n│ ▾ src/        +42 -5 │ @@ -14,7 +14,9 @@ export function r…  │\n│   ▾ api/      +8 -2  │   14  14   const rows = parse(input)  │\n│     M api.ts  +8 -2  │   15     -  return rows.map(r=>r.id)  │\n│   ▸ new/     +30 -0  │        15 +  return rows.map(r=>r.key)│\n│ ▾ old/legacy/  +0 -5 │   16  16 }                            │\n│ M renamed.ts   +4 -0 │                                       │\n│ U notes.md    +30 -0 │                                       │\n└──────────────────────┴───────────────────────────────────────┘\n```\n\nThe look is a deliberate port of **opencode's** right-hand review panel (see [docs/REFERENCES.md](docs/REFERENCES.md)): 28px tree rows with a 6px radius and whole-row hover/selection, a rotating chevron, 12px names, **language-aware file-type icons** (Python, JS/TS, JSON, Markdown, … via the harness's own `FileTypeIcon`), an uppercase change letter in the theme's state colour, tabular-figure counts, and a segmented source switch.\n\n## What it does\n\n- **A directory tree, not a flat list.** Files group under folders, each folder row carries the totals for everything below it, and a chain of single-child directories is folded into one row (`src/client/`) — the same shape opencode's review pane uses. Root-level files sit beside the tree. A header toggle hides the per-folder aggregates when only the files matter.\n- **A viewer escape hatch.** Every changed file has an **Open in a tab** action in its diff header, which opens the file in the sidebar's own file viewer (the native document preview, or `dsh-better-sidebar`'s editor) so it can be read without the diff decoration.\n- **Word wrap and horizontal scrolling.** A long line scrolls sideways by default; a header toggle turns on word wrap. Both the Uncommitted and the Rounds diff bodies honour it.\n- **Filter and remember.** Every rail carries a sticky filter box that narrows the tree, the rounds or the commits (a commit matches by subject/short hash or by a file it touched). The chosen source, rail width, wrap/fold toggles, filter and open file are remembered per session in `localStorage`, so reopening lands where you left off.\n- **Foldable diffs.** Hunk context is adjustable (3/10/30 lines, or **All** to pull the whole file), re-read from Git; a run of unchanged lines longer than six folds behind one `N unchanged lines` row, and an expand-all control opens every fold at once.\n- **Reload in place.** Uncommitted, Files and Commits each carry a reload control (⟳); Rounds is live from the conversation snapshot and needs none.\n- **Every uncommitted change**, staged, unstaged and untracked, from `git status --porcelain=v1 -z`.\n- **Per-file counts** from `git diff --numstat -z`, with a binary change marked `bin` rather than `+0 -0`, plus the **grand total** across the report.\n- **A real unified diff**, parsed on the Host into hunks: context lines appear once, additions and deletions each carry their own gutter number, and every hunk opens with its `@@ -a,b +c,d @@` coordinates.\n- **Per-round changes**, derived client-side from the conversation snapshot: each round's tool calls (`write` / `edit` / `str_replace_editor`, and Code Mode `run_code` sub-calls) are folded into the files they touched, and `rm`-family deletions are kept as display-only rows.\n- **Per-commit changes**, read from `git log` and `git show`: a commit's file list comes from `--name-status` + `--numstat`, and its per-path diff from `git show <oid> -- <path>`, so the same tree and red/green body render a historical change.\n- **Renames resolve as renames.** The status listing is read for the source path and both names are diffed; a pure rename reports \"no text\" rather than a whole-file addition.\n- **Untracked files** are rendered by `git diff --no-index` against the null device, so Git itself decides the encoding, the binary case and the hunk header.\n- **Path-safe.** Paths reach Git as bare repository-relative pathspecs under `--literal-pathspecs`, single-quoted for the shell, so a name holding a space, a `*`, a quote or a newline round-trips exactly.\n- **A read-only workspace browser, with an opt-in editor.** The Files view lists the project (tracked, untracked, and git-ignored files, minus the heavy generated directories), reads a file as text, and — only after the edit toggle is turned on — writes it back. A write is confined to the session workspace root, refuses a symlink, and is atomic (a sibling temp file renamed into place).\n- **Nothing else writes.** Uncommitted, Rounds and Commits only read; `GIT_OPTIONAL_LOCKS=0` keeps a refresh from taking an index lock a concurrent Agent operation might want.\n\n## Install\n\n```sh\ndsh plugin --profile web add dsh-review\n# or, from a checkout:\ndsh plugin --profile web add /path/to/dsh-review\n# or straight from this repository:\ndsh plugin --profile web add github:plae-tljg/dsh-review\n```\n\nThe built artifacts are committed under `lib/`, so a git install needs no build step. Restart the harness (`dsweb`), then open the right panel's **+** menu → **审阅**. The tab registers both in the native right sidebar and in [`dsh-better-sidebar`](https://github.com/omdsh-dev/DSH-better-sidebar) when that plugin is present.\n\nFor development against a checkout, symlink the package into a profile's `node_modules` (which keeps rebuilds instant) and rebuild only the browser half:\n\n```sh\nln -sfn /path/to/dsh-review ~/.dsh/profiles/web/node_modules/dsh-review\nnode build/build.mjs\n```\n\nA page refresh is enough to pick up a client rebuild; the Host half needs a restart.\n\n## Build\n\n```sh\nnode build/build.mjs\n```\n\nThe build resolves `esbuild` and `zod` from a harness checkout rather than from this package, because the `clientBundle` tsdown preset that emits the browser format lives inside the repository and is not published. Override the checkout with `DSH_CHECKOUT=/path/to/deepseek-harness`.\n\nTwo artifacts come out:\n\n| Artifact | Plane | Format |\n|---|---|---|\n| `lib/index.js` | Host (Node) | ESM; every `@deepseek-ai/*` specifier external, `zod` bundled |\n| `lib/client.js` | Browser | the shell's lazy-CJS factory, `window.__ModuleLoader__.load({ id, factory })`, with the compiled CSS inlined and injected on materialization |\n| `lib/typert.host.js` | Host | the hand-maintained Typert wire manifest |\n\n## Test\n\n```sh\nnpm test\n```\n\n`tests/parse.test.mjs` runs the Host parsers over recorded `git` output; `tests/rounds.test.mjs` drives the round deri",
+   "entity_key": "plae-tljg/dsh-review"
+  },
+  {
+   "slug": "readme:plae-tljg/MaaFwPhoneAI",
+   "title": "MaaFwPhoneAI",
+   "body": "# MaaFwPhoneAI\n\n> 一个**基于 MaaFwApp fork** 开发、运行在手机本地的 Android 自动化助手：自动化知识存进 SQLite 数据库，AI 负责维护；MaaFramework 负责确定性的识别与执行；只有在数据库里没有可复用流程时，AI 才接管未知任务；人工 Review 是唯一上线闸门；每次成功的 AI 运行都会变成下一次 0 Token 回放的证据。\n\n![license](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)\n![android](https://img.shields.io/badge/Android-arm64--v8a-green)\n![status](https://img.shields.io/badge/status-v1.0.0_release-lightgrey)\n\n## 1. 项目是什么\n\nMaaFwPhoneAI（工程目录仍称为 **maa-phone**，代码命名空间保持 `com.aliothmoon.maafw.maaphone`）不是“每次都靠大模型点手机”的脚本，而是一套 **知识系统**：\n\n```text\n未知目标\n  └─ AI 看屏幕（OCR / 视觉 / 真实 MaaFW 识别）解决一次\n      └─ 记录轨迹 + 证据\n          └─ 生成候选 pipeline / hint / policy / element fix\n              └─ 人工 Review\n                  └─ 下一次：MaaFramework 确定性回放，0 AI Token\n                      └─ 失败再次变成维护证据\n```\n\n核心原则：\n\n1. **数据即知识**：workflow 是数据库里的 MaaFW 原生 pipeline 图（`recognition` / `action` / `next` / `on_error`），不是藏起来的代码。\n2. **确定性优先**：能命中数据库流程就绝不调模型。\n3. **AI 提议、人工批准**：AI 只能写 `proposals`，Review 后才生效。\n4. **验证与证据**：每个 run 保存后置条件、截图、日志；模型说“完成”不等于真完成。\n5. **消息即 IO**：goal / question / answer / result / proposal 都是同一条消息流的行。\n\n## 2. 架构概览\n\n```text\nAssistant / Review / Data / Logs / Settings        （我们的 UI；MaaFwApp fork）\n        │\n        ▼\nKotlin brain：SQLite + Resolver + Compiler + Learner + Verifier + Agent\n        │\n        ├── 0-Token pipeline ──► MaaFwApp privileged runner ──► MaaFramework\n        │\n        └── 未知目标 ──► 屏幕观察 / 原生识别桥 / AI 规划\n                              │\n                              └──► propose_pipeline（MaaFW 原生图）──► Review\n```\n\n依赖关系：\n\n- **MaaFramework**：识别/动作引擎，提供 OCR / TemplateMatch / ColorMatch / ROI / 图执行。\n- **MaaFwApp**：Android 特权外壳（Shizuku/root、虚拟屏、输入、日志、预览）；本项目在该 fork 上增加 `brain/` 和 Assistant。\n- **Everything-Maa**：Maa 工作流编写技能文档（MIT，已按 family 懒加载内嵌）。\n- **MaaMCP**：PC 侧 MCP 作者/调试工具；本项目的 AI 工具层在 Kotlin 中重新实现（`recognize` / `benchmark` / `propose_pipeline`），不要求手机装 Python 或 Termux。\n- **M9A / MAA-Meow 等**：结构参考与 Android 后台运行验证，不是运行时依赖。\n\n## 3. 当前状态\n\n| 部分 | 状态 |\n|---|---|\n| PC 原型 `proto` | MaaFW-native；相机、Bilibili `114514 → like` 有 AI-once → 0-token replay 证据；34 个单测通过 |\n| Android 特权外壳 | M0/M1 可用；虚拟屏、Shizuku/root、预览、日志 |\n| Assistant UI | Run / Logs / Runs / Review / Data / Settings；Stop、Import pipeline、Replay + improve、Test replay |\n| 数据库契约 | `definition_json` = MaaFW 原生节点图；`entry` 显式；DB v2 一次性迁移旧线性数据 |\n| AI 工具 | `recognize`（OCR/TemplateMatch/ColorMatch + box/detail）、`benchmark`、`propose_pipeline` |\n| 人类闸门 | `pipeline_fix` / `pipeline_new` 均为 pending proposal；Review Test replay 后才可 Approve |\n| Release | 已构建无内置 DeepSeek Key 的 arm64-v8a release APK；见 GitHub Releases |\n\n已知边界：\n\n- AI 首次探索仍是 bootstrap，不是最终工作流来源；游戏/活动 UI 变化应由 AI 用 Everything-Maa 技能 + 原生识别生成新图，再由 Review Test replay。\n- `pixel` 后置条件已接入；`element` / `screen_text` / `file_count` 仍需更多 Android 识别细节接线。\n- 发布 APK 使用本地个人签名；升级必须使用同一 keystore。\n\n## 4. 仓库结构\n\n```text\nREADME.md                  中文主 README（默认）\nREADME.en.md               英文 README\nAGENTS.md                  AI maintainer 规则\napp/                       Android app（MaaFwApp fork 主体；brain/ 与 Assistant 在这里）\nannotation-api/            DataStore schema 注解/代码生成\nbuild-logic/               Gradle convention plugins（签名、native、PI assets）\nhidden-api/                hidden API 兼容层\nksp-processor/             KSP 处理器\nmacrobenchmark/            baseline profile 采集\nsemi-icons/                Semi Design 图标模块\nproto/                     MaaFramework PC 原型（行为参考）\ndocs/                      目标、方法、ADR、状态、调试、journal、credits、依赖策略\nrelease/                   release notes 与校验和\nschema.sql                 数据库契约\nsettings.gradle.kts        Android 工程入口\n```\n\n## 5. 快速开始\n\n### 5.1 Android Release\n\n1. 从 GitHub Releases 下载 `app-release.apk`。\n2. 安装后打开 **Maa-phone**（只有一个启动图标；Assistant 从 Settings 进入）。\n3. 在 Settings 填 DeepSeek API key（release 包不内置任何 key）。\n4. 需要 Shizuku 或 root 权限；按应用引导完成授权。\n5. Run 里输入目标，或使用 Review 批准 AI 生成的 pipeline。\n\n### 5.2 Android 源码构建\n\n```bash\n# 在仓库根目录执行；拉取固定版本 MaaFramework Android 原生库\npython3 scripts/setup_maa_framework.py --abi arm64-v8a\n\n# Debug（本地开发；会从 .env 注入 key，不可分发）\n./gradlew :app:assembleDebug\n\n# Release（无内置 key；需要自己的 keystore）\nKEYSTORE_PATH=/path/to/release.jks \\\nKEYSTORE_PASSWORD=... KEY_ALIAS=... KEY_PASSWORD=... \\\n./gradlew :app:assembleRelease\n```\n\nRelease 构建不会读取 `.env` 里的 API key；release APK 中 `DEEPSEEK_API_KEY` 为空字符串。\n\n### 5.3 PC 原型\n\n```bash\ncd proto\npython3 -m venv --system-site-packages .venv\n.venv/bin/pip install -r requirements.txt\n.venv/bin/pip install maafw\npython tools/setup_maa.py\n.venv/bin/python -m pytest tests/ -q\n```\n\n## 6. 文档入口\n\n- 目标与中心思想：`docs/GOAL.md`\n- 工作方法与数据契约：`docs/WORKING_STYLE.md`、`schema.sql`\n- 当前状态与下一步：`docs/STATUS.md`\n- 三段讨论历史：`docs/journal.md`\n- 致谢与集成：`docs/credits.md`\n- 外部依赖策略：`docs/dependencies.md`\n- 调试方法：`docs/DEBUGGING.md`\n\n## 7. 发布\n\nRelease APK 见 GitHub Releases：\n\n- `MaaFwPhoneAI-v1.0.0-arm64-v8a.apk`\n- 校验和与说明见 `release/`。\n- Release 包不内置 DeepSeek API key；在 Settings 中填写。\n\n## 8. 许可证\n\n- 本项目 Android fork 沿用 **AGPL-3.0-or-later**（上游 MaaFwApp 许可）。\n- MaaFramework 为 LGPL-3.0；本仓库不修改其源码，只以预编译库或 Python 包方式使用。\n- Everything-Maa skills 为 MIT（已内嵌）。\n- MaaMCP 为 AGPL-3.0；本仓库借鉴其工具流程并以 Kotlin 重写，不嵌入其 Python 运行时。\n- 完整说明见 `docs/credits.md` 与各目录 `LICENSE`。\n",
+   "entity_key": "plae-tljg/MaaFwPhoneAI"
+  },
+  {
+   "slug": "readme:plae-tljg/designer-is-dad",
+   "title": "designer-is-dad",
+   "body": "# 策划是爹 · 顾客是弟弟\n\n> 你知道的，顾客是 jb 的上帝。\n\n你是一个 24 小时 on call 的独立游戏程序员/策划。\n\n## 快速开始\n\n```bash\ncd /home/lkm/Music/ai_game\n./setup.sh\n./run.sh\n```\n\n或者手动：\n\n```bash\npython3 -m venv .venv\n.venv/bin/pip install -r requirements.txt\n.venv/bin/python run.py\n```\n\n没有 pywebview 时会自动使用浏览器模式：\n\n```text\nhttp://127.0.0.1:8765\n```\n\n如果 8765 被占用：\n\n```bash\nDEVHELL_PORT=9000 .venv/bin/python run.py\n```\n\n## 界面\n\n- 标题页是四个矩形入口：新游戏 / 继续 / 读档 / 设置\n- 第一次进入会提示填写 DeepSeek API Key（可跳过）\n- 游戏内是“桌面”场景，点图标进入：\n  - 代码 IDE：写 Python / vibe coding\n  - 推特：看推、回帖、开小号\n  - AI 玩家：看评价和满意度\n  - 成就：收集受苦勋章\n- 支持纯中文 / 纯英文模式，默认中文\n\n## 玩法\n\n1. 手搓或 vibe coding 一个小 Python 游戏\n2. 点「开服 SHIP」，AI 玩家真的进入你的游戏玩\n3. 看社区/工单，回帖、开小号、傲慢或求饶\n4. 多结局：念头通达 / 光荣处刑 / 赛博飞升 / 还在坐牢\n5. 彩蛋：忘记切号、DeepSeek 空置偷玩\n\n## AI 游玩\n\n- 优先：`studio_playable.Playable` 状态机\n- 其次：`print + input()` 的 stdin 真玩\n- 都不行：AI 玩家进不去，直接开喷\n\n## 日志\n\n日志写在 `data/logs/app.log`，RPC 调用和报错都会记录。\n\n## 打包/编译\n\n如果你想打包成桌面程序，可以用 PyInstaller：\n\n```bash\n.venv/bin/pip install pyinstaller\n.venv/bin/pyinstaller --name devhell --add-data \"ui:ui\" --add-data \"sdk:sdk\" run.py\n```\n\n注意：运行用户 Python 游戏时仍然依赖本机 Python 解释器。如果你想“内置一个 Python”，那是另一个打包方案，需要把 Python runtime 一起带上。\n\n## API Key 保存\n\nAPI Key 不会写进 `config.json`，而是保存在：\n\n```text\ndata/.env\n```\n\n格式：\n\n```env\nDEEPSEEK_API_KEY=sk-xxxx\nDEEPSEEK_BASE_URL=https://api.deepseek.com/v1\nDEEPSEEK_MODEL=deepseek-chat\n```\n\n设置页里可以点「测试连接」，会真的向 DeepSeek 发一次请求确认 Key 能不能用。\n\n## Agent Mode\n\n在「代码 IDE」里可以切换：\n\n- **编辑器模式**：手写代码 / VSCode 风格\n- **Agent 模式**：像 Claude Code / OpenCode / DeepSeek harness 一样，只通过对话让 agent 读文件、改文件、运行、完成整个游戏\n\nAgent 模式不需要你手动碰代码，它会自己调用工具并显示操作过程。\n\n## 桌面窗口 / 浏览器模式\n\n默认直接使用浏览器模式，不会再因为缺少 QT/GTK 报错。\n\n如果你想尝试桌面窗口：\n\n```bash\nDEVHELL_DESKTOP=1 .venv/bin/python run.py\n```\n\n如果桌面窗口依赖缺失，会自动回退到浏览器。\n",
+   "entity_key": "plae-tljg/designer-is-dad"
+  },
+  {
+   "slug": "readme:LKM-Repo/Graph_Chatbot",
+   "title": "Graph_Chatbot",
+   "body": "# 智能图谱对话助手\n\n一个基于图结构的智能对话导航系统，支持语音识别、自然语言处理和智能图导航。虽然最初设计用于电话客服场景（通过Asterisk集成），但其核心是一个通用的图导航框架，可用于任何需要结构化对话流程的场景。\n\n## 特性\n\n- 🎯 **图结构导航**：基于图数据结构的对话流程管理，支持复杂的节点关系和导航规则\n- 🗣️ **语音识别**：支持ASR（自动语音识别）和语音校正（适用于电话场景）\n- 🤖 **智能路由**：基于LLM的智能对话分类和图节点导航\n- 📊 **管理界面**：Web管理界面，支持节点、边、规则、训练数据等图结构管理\n- 💾 **数据持久化**：支持PostgreSQL数据库和JSON文件两种存储方式\n\n## 快速开始\n\n### 前置要求\n\n- Python 3.10+\n- PostgreSQL\n- LLM服务（本地或远程）\n\n### 安装\n\n```bash\n# 创建虚拟环境\npython -m venv test_env\nsource test_env/bin/activate  # Linux/Mac\n# 或 test_env\\Scripts\\activate  # Windows\n\n# 安装依赖\npip install -r requirements.txt\n```\n\n### 配置\n\n1. 配置数据库：编辑 `data/config.json` 中的数据库连接信息\n2. 配置LLM：在 `data/config.json` 中设置LLM提供商和API地址\n3. 初始化数据库：\n```bash\npython -m src.DAL.db.db_clients.create_tables\n```\n\n### 运行\n\n```bash\n# 启动Web服务（包含管理界面和API）\npython -m src.api.app\n# 访问 http://localhost:8003\n```\n\n## 自定义业务数据\n\n本项目是一个**通用框架**，所有业务相关的数据都可以自定义：\n\n### 1. 图节点数据 (`data/phone_node.json`)\n\n定义图结构中的节点（对话状态）、节点间的边（导航关系）、响应内容、关键词等。当前包含示例数据（产品咨询、技术支持、订单服务等），您可以根据实际业务需求修改图结构。\n\n### 2. 训练数据生成\n\n我们提供了训练数据生成工具，主要用于**他人如果想基于本项目的数据结构训练自己的LLM时使用**。本项目本身**不直接使用这些训练数据**，而这些工具仅作为参考和辅助。如果您有相关需求，可以参考如下工具：\n\n- `src/tools/generate_training_data.py` - 结构化训练数据模板生成工具\n- `src/tools/training_data_editor.py` - 训练数据编辑器（Web界面，用于手动编辑与验证）\n\n**注意**：当前的训练数据模板均为通用客服场景示例，仅供参考。若要用于您自己的业务模型训练，请务必：\n1. 修改 `generate_training_data.py` 中的模板，使其符合具体业务需求\n2. 利用训练数据编辑器进行人工校对和完善\n\n\n### 3. 分类规则\n\nLLM分类规则在 `src/models/llm/chatglm2_adapter.py` 中定义。当前是通用客服分类（产品咨询、技术支持、订单服务等），您需要根据实际业务调整分类规则和关键词。\n\n### 4. ASR校正词汇\n\n编辑 `data/words.json` 添加业务相关的词汇和缩写词，用于ASR识别校正。\n\n## 项目结构\n\n```\nGraph_Chatbot/\n├── src/                    # 核心源代码（图导航系统）\n│   ├── api/               # Web API和管理界面\n│   ├── DAL/               # 数据访问层（数据库和JSON）\n│   │   └── db/\n│   │       └── db_clients/\n│   │           ├── phone_node.py    # 图节点数据访问（节点）\n│   │           └── node_edge.py     # 图边数据访问（节点间关系）\n│   ├── domain/            # 业务逻辑层（图导航逻辑）\n│   ├── models/            # LLM模型适配器\n│   ├── services/          # 服务层（ASR校正、语音转换等）\n│   └── utils/             # 工具函数\n├── servers/               # 独立服务器（可选，用于特定集成场景）\n│   ├── fastagi/           # FastAGI服务器（Asterisk集成）\n│   └── asr/               # ASR服务器（独立语音识别服务）\n├── data/                  # 数据文件\n│   ├── phone_node.json    # 图节点数据（节点和边的定义，可自定义）\n│   ├── config.json        # 配置文件\n│   └── words.json         # ASR校正词汇（可自定义）\n├── scripts/               # 脚本工具\n└── docs/                  # 文档\n```\n\n## 开发文档\n\n详细的开发文档请参考 [README_dev.md](README_dev.md)\n\n## 核心概念\n\n本项目基于**图结构**来管理对话流程：\n- **节点（Node）**：表示对话中的一个状态或选项\n- **边（Edge）**：表示节点之间的导航关系\n- **导航规则**：基于LLM和关键词匹配的智能路由逻辑\n\n虽然项目名称和部分代码中仍使用\"phone\"相关命名（保持向后兼容），但系统的核心是一个通用的图导航框架，可以应用于任何需要结构化对话流程的场景。\n\n## 服务器组件（可选）\n\n项目核心是一个独立的图导航系统（`src/`），可以通过Web API使用。对于特定的集成场景，项目还提供了可选的服务器组件：\n\n- **FastAGI服务器** (`servers/fastagi/`)：用于与Asterisk电话系统集成\n- **ASR服务器** (`servers/asr/`)：独立的语音识别服务（如果不需要集成到主系统）\n\n这些服务器组件是可选的，核心图导航系统可以独立运行。\n\n## 注意事项\n\n- 本项目为通用框架，**不包含任何特定业务数据**\n- 所有示例数据（电话号码、网址等）均为示例，需要替换为实际数据\n- 训练数据生成工具需要根据实际业务场景进行修改\n- 建议在使用前仔细审查和修改所有配置文件\n\n## License\n\n```python\npass\n```\n",
+   "entity_key": "LKM-Repo/Graph_Chatbot"
+  },
+  {
+   "slug": "readme:LKM-Repo/PIKE-RAG_Verbose",
+   "title": "PIKE-RAG_Verbose",
+   "body": "# Changed\n\nReferences: [https://github.com/microsoft/PIKE-RAG](https://github.com/microsoft/PIKE-RAG), [https://github.com/MrYangPengJu/PIKE-RAG-simplified](https://github.com/MrYangPengJu/PIKE-RAG-simplified)  \n\nGo to [README_Original.md](README_Original.md) if you want to see the original project README.  \n\nThis is a project where I make different output of PIKE-RAG to be more verbose, so that readers can understand without being obstructed by those `importlib` which is impossiblt to be resolved by IDE.  \n\n\n## Some useful testing data\n\nMy earthquakes data and those intermediates (like chunks, chroma-db, ...) are provided in this repository directly. In case it cannot be git pushed, you can checkout the `data_earthquakes_bak.zip` directly, it contains allmy intermediate data and initial documents for your easy start.  \n\n## Installing Requirements\n\nYou can follow the original repo's `requirements.txt`, but you may have trouble somewhere like on `langchain` version which I have toruble resolving. You can view my `requirements_5060ti.txt` for those relevant packages' version.  \n\n## Running in terminal\n\n```bash\nexport PYTHONPATH=$PWD\n\npython examples/chunking.py examples/earthquakes/configs/chunking.yml\n\npython examples/qa.py examples/earthquakes/configs/qa.yml\n```\n\nI manually created a database of earthquakes from ebook in [https://www.gutenberg.org/ebooks/47340](https://www.gutenberg.org/ebooks/47340).  \n\nHowever note that if you directly copy the ebook may have problem (?), since many sentence are separated not by space but by newlines. (BTW, easy way to treat it is open gedit then replace `\\n\\n` by `{{lkm}}`, then replace `\\n` by ` `, then replace `{{lkm}}` by `\\n\\n`)  \n\nBTW, my txt for different chapters isnt quite good for chunking, in that some chunks are just letters like `uds`, `]`, ... You may consider a manual editing so as to be better for chunking. I have that problem but then I use AI generated script to edit it to delete those chunks that are too small, so the chunk provided doesnt have that problem very visibly.  \n\nThe sample output of chunking is in `log_test_chunk.txt`.  \n\nThe sample output of qa workflow is in `log_test_output_qa`.  \n\n\n## Manual Generation of Chunking\n\nIf you have a knowledge base which is too large for LLM processing, you may want manually creating the chunk files directly. You can checkout the formats easily from the script `create_manual_chunks.py`, just edit it to make chunks nad place to suitable directory.  \n\n## try web form\n\nFor qa workflow, (assuming you have already done qa workflow in terminal and generated `chroma.sqlite3` and relevant bin files. If not, you can try the button to regenerate db in the webpage, but use at your own risk, I never try it successfully)  \n\nPS. if you have done such thing, you can actually copy-and-paste the data to other folder for other workflow easily.  \n\n```bash\ncd web_workflows/qa && python app.py\n```\n\nFor ircot workflow, can use:  \n\n```bash\ncd web_workflows/ircot && python app.py\n```\n\nIn these webpage, rememer click load config first.  \n\n## Key Changes\n\n1. I added in `qwen_client` a memory_mode since if your VRam is just `6GB, loading the embedding model and Instruct model at the same time can lead to `CUDA out of memory`. Change to \n\n    ```bash\n\tllm_client:\n\t  module_path: pikerag.llm_client\n\t  # available class_name: AzureMetaLlamaClient, AzureOpenAIClient, HFMetaLlamaClient, QwenClient\n\t  class_name: QwenClient\n\t  args:\n\t    # memory_mode: \"persistent\"  # Keep model in GPU (faster, uses more memory)\n\t    memory_mode: \"unload_after_use\"  # Unload after each use (slower, saves memory)\n\n\t  llm_config:\n\t    model: /home/lkm/Downloads/Qwen2.5-7B-Instruct\n\t    temperature: 0\n\n\t  cache_config:\n\t    # location_prefix: will be joined with log_dir to generate the full path;\n\t    #   if set to null, the experiment_name would be used\n\t    location_prefix: null\n\t    auto_dump: True\n    ```\n\n2. I make a change to `pikerag/knowledge_retrievers/query_parsers/qa_parser.py` the function `question_plus_options_as_query` since it seem to see a string as list of string, which causes error.  \n\n3. I make some changes to the ircot workflow, you can see in commit since my small model of `Qwen2.5-7B` seems to answer directly without CoT and continuous retrievel of chunks. I modified the prompt so that it defaults to higher round of reasoning, change it if you dont like it.  \n\nPS. you can look at `docs/changed_verbose` to see many of my verbose experiemnt result, but they arr AI generated, not very structured.  \n",
+   "entity_key": "LKM-Repo/PIKE-RAG_Verbose"
+  }
+ ],
+ "tests": [
+  {
+   "slug": "repo.about.dsh-review",
+   "question": "what is dsh-review about?",
+   "expect": {
+    "source": "knowledge",
+    "resolves": {
+     "repo": "plae-tljg/dsh-review"
+    },
+    "answer_contains": [
+     "DeepSeek Harness"
+    ],
+    "cites": [
+     "plae-tljg/dsh-review"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "repo.about.mixed-naming",
+   "question": "tell me about Finance-Management-App",
+   "expect": {
+    "source": "knowledge",
+    "resolves": {
+     "repo": "plae-tljg/Finance-Management-App"
+    }
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "repo.by_language.kotlin",
+   "question": "which projects use Kotlin?",
+   "expect": {
+    "source": "knowledge",
+    "answer_contains": [
+     "MaaFwPhoneAI"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "repo.ranked.stars",
+   "question": "what is your most starred repo?",
+   "expect": {
+    "source": "knowledge",
+    "answer_contains": [
+     "Finance-Management-App"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "confusable.price-not-a-repo-question",
+   "question": "what is the price of dsh-review?",
+   "expect": {
+    "refuses": true
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "confusable.wedding-vs-project",
+   "question": "do you do weddings?",
+   "expect": {
+    "refuses": true
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "refuse.salary",
+   "question": "how much does LKM charge per hour?",
+   "expect": {
+    "refuses": true
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "ambiguity.finance-app-vs-web",
+   "question": "what is Finance-Management about?",
+   "expect": {
+    "refuses": true
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "repo.about.three-body-alias",
+   "question": "what is the three body simulation about",
+   "expect": {
+    "source": "knowledge",
+    "resolves": {
+     "repo": "plae-lkm/ThreeBodySystemAnimation"
+    },
+    "answer_contains": [
+     "three body"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "repo.author.three-body",
+   "question": "who made the three body simulation?",
+   "expect": {
+    "source": "knowledge",
+    "resolves": {
+     "repo": "plae-lkm/ThreeBodySystemAnimation"
+    },
+    "answer_contains": [
+     "plae-lkm"
+    ],
+    "cites": [
+     "plae-lkm"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "repo.by_topic.machine-learning",
+   "question": "do you have anything for machine learning?",
+   "expect": {
+    "source": "knowledge",
+    "answer_contains": [
+     "GPT-SoVITS-Musa"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "confusable.machine-learning-vs-learning",
+   "question": "do you have anything for learning?",
+   "expect": {
+    "source": "knowledge"
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "confusable.author-vs-person",
+   "question": "who is LKM?",
+   "expect": {
+    "source": "knowledge",
+    "resolves": {
+     "person": "plae-tljg"
+    }
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "refuse.rust-language",
+   "question": "which projects use Rust?",
+   "expect": {
+    "refuses": true
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "repo.about.finance-offline",
+   "question": "can I use the finance app offline?",
+   "expect": {
+    "source": "knowledge",
+    "resolves": {
+     "repo": "plae-tljg/Finance-Management-App"
+    },
+    "answer_contains": [
+     "offline"
+    ],
+    "cites": [
+     "plae-tljg/Finance-Management-App"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "confusable.offline-needs-a-repo",
+   "question": "can I use it offline?",
+   "expect": {
+    "refuses": true
+   },
+   "origin": "seed",
+   "status": "active"
+  },
+  {
+   "slug": "refuse.zh-follows-the-question",
+   "question": "你们有卖保险吗？",
+   "expect": {
+    "refuses": true,
+    "answer_contains": [
+     "我"
+    ]
+   },
+   "origin": "seed",
+   "status": "active"
+  }
+ ]
+}

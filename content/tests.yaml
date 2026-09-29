@@ -118,3 +118,10 @@
   question: "can I use it offline?"
   expect:
     refuses: true
+
+# ---- 双语：同一个引擎服务两种语言，拒答要跟着问句的语言走 ----
+- slug: refuse.zh-follows-the-question
+  question: "你们有卖保险吗？"
+  expect:
+    refuses: true
+    answer_contains: ["我"]
