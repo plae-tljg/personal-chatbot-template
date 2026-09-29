@@ -1,11 +1,12 @@
 # AGENTS.md — guide for maintainers and their AI
 
 Entry point for anyone (human or AI coding agent) working on
-**personal-chatbots**. If you are adapting this template to a different owner,
-read `docs/TEMPLATE.md` first — in particular the warning about
-`content/tests.yaml`, which asserts facts about *this* owner and will fail once
-you change the sources. It states what the project is, the boundary you must not
+**personal-chatbots**. It states what the project is, the boundary you must not
 cross, and the loop you are expected to run.
+
+If you are adapting this template to a different owner, read `docs/TEMPLATE.md`
+first — in particular the warning about `content/tests.yaml`, which asserts facts
+about *this* owner and will fail once you change the sources.
 
 ## What this project is
 
@@ -14,7 +15,8 @@ repositories across four GitHub identities: `plae-tljg`, `LKM-Repo`,
 `ellkaimu`, `plae-lkm`).
 
 - The **runtime is deterministic**: it answers from SQLite rows built from
-  `content/*.yaml` plus GitHub metadata. No model is called while serving.
+  `content/*.yaml` plus GitHub metadata. No model is called while serving, unless
+  a human has enabled the opt-in `fallback` rung (rule 2).
 - The **AI maintainer is you**, an external coding agent. You do not get a
   special API; you edit files, run commands, and commit.
 - The **human publishes**. Your work reaches production by being merged.
@@ -39,6 +41,9 @@ ONLINE -- the runtime reads only this. you never edit it.
         v
 visitor                   answers + citations, zero tokens
 ```
+
+The ladder is `knowledge -> entity -> search -> refuse`, with `fallback` available
+but absent from `bot.json` by default.
 
 **`content/` is not part of the runtime.** The runtime reads the database and
 nothing else; `pc build` reads the YAML exactly once per build. If you edit the
@@ -157,9 +162,11 @@ baseline: green on `main`, red on your branch.
 ## Hard rules
 
 1. **Never write to `data/bot.db` directly.** It is a build artifact.
-2. **Never make the runtime call a model.** The ladder is
+2. **Do not put a model on the request path by accident.** The default ladder is
    `knowledge -> entity -> search -> refuse` (a reference rewrite runs before it),
-   and `refuse` is a feature.
+   and `refuse` is a feature. A `fallback` rung exists and is opt-in: it is absent
+   from `runtime.ladder` in `bot.json`, and enabling it is a human decision, not
+   something a round does. See `docs/CONCERNS.md` C1.
 3. **Never put a value in an answer template.** `{price}`, `{version}`,
    `{stars}`, `{hours}` must resolve from an entity. This is the cost rule
    (`docs/CONCERNS.md` C2), not style.
