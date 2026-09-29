@@ -184,10 +184,23 @@ pc build && pc test      iterate until green
 open a PR                human reviews, merges, deploys
 ```
 
-Run by a coding agent (openclaw / Hermes / DSH / Claude Code), described in
+Run by a coding agent (opencode / Hermes / DSH / Claude Code), described in
 `AGENTS.md` and `skills/maintain-round.md`. It needs no special API — it edits
 files and commits. CI is the gate: green on `main`, red on the branch is a
 regression.
+
+`opencode` is wired up and ready, free models included:
+
+```bash
+opencode models | grep -i free   # the free pool rotates; check, do not assume
+opencode
+> /review                        # look at what is failing, change nothing
+> /maintain                      # run one round
+```
+
+`.opencode/README.md` explains the model choice (read the privacy column, not the
+price column — a round reads real visitor questions) and the permission boundary
+that stops the agent editing anything outside `content/`.
 
 ## The cost rule
 

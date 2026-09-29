@@ -1,0 +1,77 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "_note": [
+    "Config for running the maintenance agent on this repo.",
+    "The runtime never uses any of this: no model runs while serving.",
+    "AGENTS.md is read automatically by opencode; these agents and commands",
+    "add the boundary the design depends on -- the maintainer may edit",
+    "content/, and it may not touch the engine or the database.",
+    "Run `opencode models` (or /models in the TUI) for the current free list;",
+    "the free Zen pool rotates."
+  ],
+
+  "instructions": ["docs/LEVELS.md", "docs/CONCERNS.md"],
+
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "git push*": "deny",
+      "rm *": "deny",
+      "sudo *": "deny"
+    }
+  },
+
+  "agent": {
+    "maintainer": {
+      "description": "Runs one maintenance round. Edits content/ only, never the engine, never the database.",
+      "mode": "primary",
+      "model": "opencode/space-bunny-free",
+      "temperature": 0.1,
+      "prompt": "{file:./skills/maintain-round.md}",
+      "permission": {
+        "edit": {
+          "*": "deny",
+          "content/*": "allow",
+          "content/**": "allow"
+        },
+        "bash": {
+          "*": "ask",
+          "python -m personal_chatbots *": "allow",
+          "pc *": "allow",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git add content/*": "allow",
+          "git commit*": "ask",
+          "git push*": "deny",
+          "rm *": "deny"
+        },
+        "webfetch": "deny"
+      }
+    },
+
+    "reviewer": {
+      "description": "Reads the inbox and reports what is failing and what it would cost to fix. Changes nothing.",
+      "mode": "primary",
+      "model": "opencode/space-bunny-free",
+      "temperature": 0.1,
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "ask",
+          "python -m personal_chatbots *": "allow",
+          "pc *": "allow",
+          "git status*": "allow",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git add*": "deny",
+          "git commit*": "deny",
+          "git push*": "deny",
+          "rm *": "deny"
+        },
+        "webfetch": "deny"
+      }
+    }
+  }
+}

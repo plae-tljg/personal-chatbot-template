@@ -46,6 +46,23 @@ the only property that makes this project safe.
 remove becomes `archived` rather than deleted, because `messages.matched_slug`
 history still points at it.
 
+## How you are run
+
+`.opencode/` wires this file to a real agent: `/maintain` runs one round with the
+live inbox injected, `/review` looks without changing anything. The boundary in
+`opencode.json` is the one this document describes, enforced by the tool rather
+than by asking nicely:
+
+```
+edit:  "*": deny        <- the engine, the schema, the docs
+       "content/*": allow
+       "content/**": allow
+```
+
+So if a round needs a code change — a new `action.kind`, a new rung — you cannot
+make it. Say so and stop; that is the boundary between "new knowledge is data"
+and "new primitive is code". See `.opencode/README.md`.
+
 ## Commands
 
 ```bash

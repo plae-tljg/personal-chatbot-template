@@ -55,11 +55,13 @@ def rule(title: str) -> None:
 
 
 def measure_price_duplication() -> tuple[int, int]:
-    """How many places must agree about one price, in each design."""
-    knowledge_region = HARDCODED_SOURCE.read_text(encoding="utf-8").partition("def demo(")[0]
-    hardcoded = sum(
-        1 for line in knowledge_region.splitlines() if str(hardcoded_bot.VOLT_EARBUDS) in line
-    )
+    """How many places must agree about one price, in each design.
+
+    Both sides are counted from the files, not asserted, so neither number can
+    rot into a claim the repo no longer honours.
+    """
+    # The foil counts its own duplication the same way `--demo` does.
+    hardcoded = len(hardcoded_bot._duplication_places("volt")) + 1
     in_templates = len(CURRENCY_LITERAL.findall(KNOWLEDGE.read_text(encoding="utf-8")))
     return hardcoded, in_templates
 
@@ -83,8 +85,9 @@ def main() -> int:
     # ---- 1 ---------------------------------------------------------------
     hardcoded_places, template_literals = measure_price_duplication()
     rule("1. One price changes")
-    print(f"   hardcoded      the Volt price appears in {hardcoded_places} places in one .py file")
-    print(f"                  -> edit 1, leave {hardcoded_places - 1} stale, no error raised")
+    print(f"   hardcoded      the Volt price appears in {hardcoded_places} places in one .py")
+    print(f"                  file, in two languages -> edit 1, leave {hardcoded_places - 1} stale,")
+    print("                  no error raised, no test able to notice")
     print(f"   parameterised  currency amounts in content/knowledge.yaml: {template_literals}")
     print("                  the validator refuses one outright, so the duplication")
     print("                  cannot come back. One row on an entity; 0 knowledge edits.")
@@ -101,12 +104,19 @@ def main() -> int:
     print("                  wrote the rule, so it cannot be fitted to the same evidence.")
 
     # ---- 3 ---------------------------------------------------------------
-    rule("3. Whether a failure leaves a trace")
-    answers = [hardcoded_bot.answer(q) for q in UNKNOWN]
-    print(f"   hardcoded      {len(UNKNOWN)} unknown questions asked")
-    print(f'                  every one returned: "{answers[0][:44]}..."')
-    print("                  nothing on disk changed. Nobody can ever find out which")
-    print("                  questions the rules missed, so the list never shortens.")
+    rule("3. What an unanswerable question produces")
+    print("   hardcoded      the fallback mirrors the question back in a friendly")
+    print("                  frame. It never says 'I don't know':\n")
+    for q in UNKNOWN:
+        print(f"                    {q!r:44} -> {hardcoded_bot.fallback(q)!r}")
+    print("\n                  The first and third are commitments invented from the")
+    print("                  customer's own wording; the shop never made them. The")
+    print("                  second is fluent and empty. All three got a reply, and")
+    print("                  none of the three left a trace.")
+    print("\n                  The damage is not the wrong answers. It is that the")
+    print("                  failure signal is gone: no question is ever *admitted*")
+    print("                  to be unanswerable, so nothing records what the rules")
+    print("                  are missing, and the gap list can never shrink.")
 
     tmp = Path(tempfile.mkdtemp(prefix="pc-compare-"))
     cfg = Config.load(ROOT, db_path=tmp / "bot.db", cache_dir=FIXTURE_CACHE)
@@ -116,8 +126,8 @@ def main() -> int:
         for q in UNKNOWN:
             runtime.ask_and_record(q, session_id="compare")
         inbox = store.unresolved_inbox(20)
-    print(f"   parameterised  the same {len(UNKNOWN)} questions -> {len(inbox)} rows in the inbox,")
-    print("                  ranked by how often the shape was asked:")
+    print(f"\n   parameterised  the same {len(UNKNOWN)} questions -> {len(inbox)} rows in the inbox,")
+    print("                  each one a to-do with a count:")
     for row in inbox[:3]:
         print(f"                    x{row['same_shape_count']}  {row['content']}")
 
