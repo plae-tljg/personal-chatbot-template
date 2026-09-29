@@ -440,3 +440,90 @@ Three things worth stating here:
 multi-turn exchange — that is the evidence that L2 is worth its live tables.
 Wanting the demo to look impressive is a legitimate second reason, but it should
 be an explicit one.
+
+
+---
+
+## C13 — How little structure is enough?
+
+**The concern.** If code is data plus structure, and the AI handles the data, then
+the obvious move is to minimise the structure: fewer tables, fewer columns,
+everything in JSON. That is what "flexible" usually means.
+
+It is also wrong past a point, and the failure is quiet.
+
+**The answer: you cannot minimise structure. You can only choose where it lives
+and who has to read it.**
+
+Every capability has a fixed amount of structure behind it. What varies is
+whether that structure is *declared* — written down where a machine can check it
+— or *reconstructed* — left as a convention that something has to re-derive:
+
+| | Declared | Reconstructed |
+|---|---|---|
+| lives in | a column, a constraint, a term in the vocabulary | a convention, a sentence in a prompt, a key name in JSON |
+| read by | the engine, and the database | whoever writes the next query |
+| read how often | once, when it was written | **every time** — every query, every agent session, every debugging pass |
+| wrong how | it does not compile, or the row is rejected | silently, in one of the five places that disagree |
+| cost | paid once | paid forever, by everyone |
+
+So the objective is not "less structure". It is:
+
+> Minimise the **reconstructed** structure. Keep the declared structure as small
+> as it can be while everything that must be legible stays legible.
+
+The practical test: **how long is the briefing?** Every sentence an agent needs
+before it can act correctly is reconstructed structure that has not been declared
+yet. Every column that enforces itself is a sentence nobody has to write.
+
+### Worked example: a product table
+
+The tempting answer for a shop is `entity_type='product'` in the generic
+`entities` table — maximum flexibility, no migration when the domain changes.
+That is the right answer for a portfolio bot with 42 repositories of one kind.
+It is the wrong answer for a shop, and the reason is the reconstructed structure
+it creates:
+
+- `price_cents` appears in listings, filters, sorting, the cart and the answer
+  templates. As a column, all five agree for free. As `attrs_json`, each of the
+  five writes its own `json_extract`, and they drift to `price`, `price_cents`,
+  `cost` — at which point the bot quotes two prices.
+- "price must not be negative", "sku is unique" are checkable by the database as
+  columns, and unenforceable as conventions.
+- The agent has to be told what a product is on every session, instead of reading
+  it from the schema.
+
+Three questions decide it, and they are the same three questions the promotion
+ladder in `docs/DESIGN.md` §5 answers individually:
+
+1. Do you know this kind of thing on day one? (yes → declare it)
+2. Do three or more queries need to agree about its fields? (yes → declare it)
+3. Are there invariants a machine could check? (yes → declare it)
+
+All three yes → a typed table. Otherwise a row, and promote later — promotion is
+a data migration, and the knowledge rows never change because they reference
+`{product}` and `{price}`, not a table.
+
+### Where this project applies it to itself
+
+The same test, run on this repository's own decisions:
+
+| decision | declared | reconstructed | verdict |
+|---|---|---|---|
+| four tables, not one | entity type is a column | — | declared, and it earns it |
+| no `products` table | — | the domain is small and one-kind | reconstructed, and cheap here |
+| the vocabulary in Python | a dict of entity types | "what kinds of thing exist" | deferred; the seam is the registry |
+| `flags` / `state` columns | — | — | **refused**: a table nobody writes to rots |
+| the ladder in `bot.json` | an ordered list | — | declared, so "is a model on the request path" is readable |
+
+The last row is the one worth keeping: the fallback rung is *declared* in the
+config rather than reconstructed from reading the engine, and that is why
+`pc doctor` can answer "why is the bot not using AI?" without a code change.
+
+### The failure mode this avoids
+
+Under-declaring does not show up as an error. It shows up as the same fact
+written slightly differently in five places, discovered by a visitor. The
+currency-literal rule in the validator (C2) is the same argument one level down:
+a price is declared on an entity and *refused* in a template, because the
+reconstructed form of a price is five sentences that disagree.

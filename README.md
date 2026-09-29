@@ -5,8 +5,10 @@ The runtime answers from SQLite rows synced out of `content/*.yaml` plus GitHub
 metadata. A coding agent maintains the content. Git is the review gate. **No model
 runs while serving** unless you add one.
 
-> **Using this as a template?** `docs/TEMPLATE.md` says which five files hold
-> everything specific to this instance, and which one will bite you first.
+> **Reading this to borrow the idea?** `docs/IDEAS.md` is the index — 32 ideas,
+> one line each, and where each is argued. `docs/TEMPLATE.md` says which five
+> files hold everything specific to this instance, and which one will bite you
+> first. It is a reference to clone and read, not a GitHub template.
 
 **Status: v1 runs.** 42 repositories across four GitHub identities, 174 entities,
 11 knowledge rows, 16 seeded cases, 103 unit + invariant tests, and a browser
@@ -296,7 +298,8 @@ db/schema.sql              5 tables + 4 views
 content/                   bot.json · knowledge.yaml · tests.yaml · curation.yaml
 personal_chatbots/         the engine (config, store, resolve, engine, build, serve)
 tests/                     unit + invariant tests, and the API fixtures
-docs/TEMPLATE.md           using this repo as a starting point for your own
+docs/IDEAS.md              index of every idea, one line each, and where it lives
+docs/TEMPLATE.md           what to change to point this at your own data
 docs/CONCERNS.md           the doubts and their answers -- start here
 docs/LEVELS.md             Facts / Flow / Task / Composite, and levels L1-L3
 docs/DESIGN.md             why: the four homes, the ladder, the seams

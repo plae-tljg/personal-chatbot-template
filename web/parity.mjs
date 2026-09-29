@@ -50,4 +50,29 @@ for (const [question, expected] of probe) {
 }
 console.log(`${probe.length} probe questions agree`);
 
+// Suggestions are computed in both engines from the same data, so they must
+// agree -- and every one of them must be answerable, or the chatroom is
+// offering a dead end.
+const suggested = [
+  ["what is dsh-review about?", "who made dsh-review"],
+  ["do you do weddings?", "what is your most starred repo"],
+  ["what projects does LKM have?", "who is LKM"],
+];
+let suggestionFails = 0;
+for (const [question, expected] of suggested) {
+  const answer = bot.ask(question);
+  if (!answer.suggestions.includes(expected)) {
+    console.log(`FAIL suggestions for ${JSON.stringify(question)}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(answer.suggestions)}`);
+    suggestionFails += 1;
+  }
+  for (const s of answer.suggestions) {
+    if (bot.ask(s).source === "refuse") {
+      console.log(`FAIL ${JSON.stringify(question)} suggested ${JSON.stringify(s)}, which refuses`);
+      suggestionFails += 1;
+    }
+  }
+}
+console.log(`${suggested.length} suggestion sets agree, all answerable`);
+failed += suggestionFails;
+
 process.exit(failed ? 1 : 0);

@@ -79,6 +79,8 @@ def cmd_ask(args: argparse.Namespace) -> int:
         print(f"\n  [{answer.source}:{answer.matched_slug or '-'}]  "
               f"{answer.latency_ms:.2f} ms  · {cost}")
         print(f"  cites: {cites}")
+        if answer.suggestions:
+            print(f"  try:   {'  ·  '.join(answer.suggestions)}")
     return 0
 
 
@@ -152,6 +154,91 @@ def cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Why is (or is not) the bot answering? One command, no guessing.
+
+    Written because the answer was not obvious even to the person who built it:
+    the fallback rung is absent from the ladder by default, so "the AI is not
+    answering" is a *config* fact, not a bug, and nothing said so.
+    """
+    import os
+
+    cfg = _prepare(args)
+    fb = cfg.fallback
+    ladder = cfg.ladder
+
+    print(f"{cfg.name} — health check\n")
+
+    print("runtime")
+    print(f"  ladder           {' -> '.join(ladder)}")
+    if "fallback" not in ladder:
+        print("  model fallback   OFF — 'fallback' is not in runtime.ladder")
+        print(f"                   so unknown questions get: {cfg.refuse_template!r}")
+        print("                   to enable it, add \"fallback\" to runtime.ladder in")
+        print("                   content/bot.json and set fallback.enabled (docs/CONCERNS.md C1)")
+    else:
+        endpoint = str(fb.get("endpoint", ""))
+        model = str(fb.get("model", ""))
+        key_env = str(fb.get("api_key_env", ""))
+        key = os.environ.get(key_env, "")
+        print(f"  model fallback   {'ENABLED' if fb.get('enabled') else 'IN THE LADDER but fallback.enabled is false'}")
+        print(f"    endpoint       {endpoint or '(unset)'}")
+        print(f"    model          {model or '(unset)'}")
+        print(f"    api key        {key_env} — {'set (' + str(len(key)) + ' chars)' if key else 'NOT SET'}")
+        if fb.get("enabled") and not key:
+            print("                   ^ every fallback call will be skipped and fall through")
+            print("                     to refusal, silently. export the key and restart.")
+        if fb.get("enabled") and not endpoint:
+            print("                   ^ no endpoint configured; same silent skip")
+
+    if args.ping and "fallback" in ladder and fb.get("enabled"):
+        import time
+
+        from .engine import Runtime
+
+        with Store(cfg.db_path) as store:
+            store.require_schema()
+            runtime = Runtime.from_store(store, cfg)
+        started = time.perf_counter()
+        answer = runtime.rung_fallback(__import__("personal_chatbots.textnorm", fromlist=["x"]).tokenize("ping"))
+        elapsed = (time.perf_counter() - started) * 1000
+        if answer is None:
+            print("\nping             no answer — see the api key line above")
+        else:
+            print(f"\nping             ok in {elapsed:.0f} ms")
+            print(f"                 {answer.text.splitlines()[0][:70]}")
+
+    with Store(cfg.db_path) as store:
+        store.require_schema()
+        stats = store.stats()
+        inbox = store.unresolved_inbox(args.limit)
+        coverage = store.knowledge_coverage()
+
+    print("\nknowledge")
+    print(f"  entities         {stats['entities']} live")
+    print(f"  knowledge rows   {stats['knowledge']} live, {stats['knowledge_archived']} archived")
+    never = [row["slug"] for row in coverage if not row["hits"]]
+    if never:
+        print(f"  never matched    {len(never)}: {', '.join(never[:6])}"
+              + (" …" if len(never) > 6 else ""))
+
+    print("\ntraffic")
+    print(f"  messages         {stats['messages']}")
+    kappa = "n/a" if stats["kappa"] is None else f"{stats['kappa'] * 100:.0f}%"
+    print(f"  kappa            {kappa}  ({stats['answered']} answered, {stats['refused']} refused)")
+    print(f"  inbox            {len(inbox)} unanswered shape(s)")
+    for row in inbox[:5]:
+        print(f"    x{row['same_shape_count']:<3} {row['content'][:60]}")
+
+    print("\ncontent")
+    cases = content_mod.load_test_cases(cfg.content_dir / "tests.yaml")
+    print(f"  frozen cases     {len(cases)}")
+    if kappa != "n/a" and stats["kappa"] < 0.5 and stats["messages"] > 20:
+        print("  note             over half the traffic is being refused. The inbox above")
+        print("                   is the to-do list: run a maintenance round.")
+    return 0
+
+
 def cmd_entities(args: argparse.Namespace) -> int:
     """Look at the vocabulary without opening the database.
 
@@ -209,6 +296,12 @@ def cmd_knowledge(args: argparse.Namespace) -> int:
             print(f"      slots: {slots}")
         print("\n  'resolves' needs a live entity of that type -- check with `pc entities`")
     return 0
+
+
+#: Rungs the browser engine implements. `fallback` is excluded on purpose: a
+#: browser-side call would put the API key in the page, so the static site cannot
+#: have one (docs/STATIC_SITE.md). `composite` is L3 and not built anywhere yet.
+BROWSER_RUNGS = ("knowledge", "entity", "search", "refuse")
 
 
 #: Written next to the exported artifacts so the consuming site has the rules in
@@ -303,7 +396,13 @@ def cmd_export(args: argparse.Namespace) -> int:
                 "default_locale": cfg.default_locale,
                 "refuse_template": cfg.refuse_template,
                 "refuse_template_zh": cfg.data.get("refuse_template_zh", ""),
-                "ladder": cfg.ladder,
+                # The ladder this target can actually run. The browser has no
+                # API key and must not have one, so `fallback` is compiled out
+                # rather than shipped and failed on -- and what was dropped is
+                # recorded so the page can say so instead of quietly differing
+                # from `pc serve`.
+                "ladder": [r for r in cfg.ladder if r in BROWSER_RUNGS],
+                "ladder_dropped": [r for r in cfg.ladder if r not in BROWSER_RUNGS],
                 "level": cfg.level,
                 "max_citations": cfg.max_citations,
             },
@@ -323,6 +422,10 @@ def cmd_export(args: argparse.Namespace) -> int:
             ],
             "entities": [
                 {
+                    # A key is unique only within a type: `plae-tljg` is both an
+                    # account and the person who owns it. Links must reference
+                    # something stable and unambiguous, so they carry ids.
+                    "id": e.id,
                     "key": e.key,
                     "type": e.entity_type,
                     "name": e.name,
@@ -334,8 +437,8 @@ def cmd_export(args: argparse.Namespace) -> int:
                 for e in store.entities()
             ],
             "links": [
-                {"from": from_key, "type": link_type, "to": to_key}
-                for from_key, link_type, to_key in store.all_links()
+                {"from": from_id, "type": link_type, "to": to_id}
+                for from_id, link_type, to_id in store.all_links()
             ],
             "documents": documents,
             # shipped so the static page can run its own self-check in the browser
@@ -477,6 +580,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--bundle", default=None,
                    help="also write a copyable directory: data.json + engine.js + CONTRACT.md")
     p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("doctor", help="why is (or is not) the bot answering?")
+    p.add_argument("--limit", type=int, default=10)
+    p.add_argument("--ping", action="store_true", help="make one real call to the fallback endpoint")
+    p.set_defaults(func=cmd_doctor)
 
     p = sub.add_parser("entities", help="inspect the vocabulary (no database access needed)")
     p.add_argument("entity_type", nargs="?", default="", help="repo, account, language, topic, project, person")

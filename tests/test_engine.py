@@ -123,9 +123,25 @@ class FallbackRungTest(BuiltCase):
     maintenance loop runs on.
     """
 
-    def test_absent_from_the_default_ladder(self):
-        self.assertNotIn("fallback", self.cfg.ladder)
-        self.assertFalse(self.cfg.fallback.get("enabled"))
+    def test_no_model_runs_when_the_rung_is_not_in_the_ladder(self):
+        """The contract, not this repo's current config.
+
+        This repository enables the fallback (docs/CONCERNS.md C1); a fresh
+        adopter should start with it off, and either way the property that
+        matters is that a ladder without the rung never reaches a model.
+        """
+        from personal_chatbots.config import Config
+        from personal_chatbots.engine import Runtime
+
+        cfg = Config.load(self.cfg.root, db_path=self.cfg.db_path, cache_dir=self.cfg.cache_dir)
+        object.__setattr__(cfg, "data", {**cfg.data, "runtime": {
+            **cfg.data["runtime"], "ladder": ["knowledge", "entity", "search", "refuse"],
+        }})
+        runtime = Runtime.from_store(self.store, cfg)
+        self.assertNotIn("fallback", cfg.ladder)
+        self.assertNotIn("fallback", [name for name, _ in runtime.ladder()])
+        for question in ("do you do weddings?", "hello there"):
+            self.assertEqual(runtime.ask(question).source, "refuse")
 
     def test_disabled_returns_none(self):
         self.assertIsNone(self.runtime.rung_fallback(["do", "you", "sell", "insurance"]))
@@ -229,3 +245,42 @@ class ReasoningStripTest(unittest.TestCase):
     def test_a_plain_answer_is_untouched(self):
         text = "dsh-review is a review tab for DeepSeek Harness."
         self.assertEqual(self.strip(text), text)
+
+
+class SuggestionTest(BuiltCase):
+    """Follow-ups must be answerable, and must not repeat the row that answered.
+
+    "Better chatflow" at level 1 is not a state machine; it is telling the
+    visitor what this bot can do. The rule that keeps it honest: a suggestion
+    that would itself refuse is worse than no suggestion, so a row is only
+    offered when every slot it declares can be filled by an entity already in
+    play.
+    """
+
+    def test_suggestions_are_answerable(self):
+        for question in ("what is dsh-review about?", "do you do weddings?",
+                         "what projects does LKM have?", "which projects use Kotlin?"):
+            answer = self.runtime.ask(question)
+            for suggestion in answer.suggestions:
+                follow_up = self.runtime.ask(suggestion)
+                self.assertFalse(
+                    follow_up.refused,
+                    f"{question!r} suggested {suggestion!r}, which refuses",
+                )
+
+    def test_the_answering_row_is_not_suggested_back(self):
+        answer = self.runtime.ask("what is dsh-review about?")
+        self.assertNotIn("what is dsh-review about", answer.suggestions)
+        self.assertTrue(all("dsh-review about" not in s for s in answer.suggestions))
+
+    def test_a_resolved_slot_drives_the_follow_ups(self):
+        # The repo resolved, so the follow-ups are about that repo.
+        answer = self.runtime.ask("what is dsh-review about?")
+        self.assertIn("who made dsh-review", answer.suggestions)
+
+    def test_a_refusal_still_offers_something(self):
+        answer = self.runtime.ask("do you do weddings?")
+        self.assertTrue(answer.suggestions, "a refusal with no way forward reads as broken")
+
+    def test_at_most_three(self):
+        self.assertLessEqual(len(self.runtime.ask("hello").suggestions), 3)

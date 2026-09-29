@@ -382,15 +382,19 @@ class Store:
             origin=row["origin"] or "",
         )
 
-    def all_links(self) -> list[tuple[str, str, str]]:
-        """Every link as (from_key, link_type, to_key), for the static export."""
+    def all_links(self) -> list[tuple[int, str, int]]:
+        """Every link as (from_id, link_type, to_id), for the static export.
+
+        Ids, not keys. A key is unique only within an entity type, so exporting
+        keys collapses `account:plae-tljg --owned_by--> person:plae-tljg` into a
+        self-link and the person becomes unreachable -- which is exactly what the
+        browser engine did until the parity check noticed.
+        """
         return [
-            (r["from_key"], r["link_type"], r["to_key"])
+            (int(r["from_id"]), r["link_type"], int(r["to_id"]))
             for r in self.conn.execute(
-                "SELECT f.key AS from_key, l.link_type, t.key AS to_key FROM entity_links l"
-                " JOIN entities f ON f.id = l.from_entity_id"
-                " JOIN entities t ON t.id = l.to_entity_id"
-                " ORDER BY l.id"
+                "SELECT from_entity_id AS from_id, link_type, to_entity_id AS to_id"
+                " FROM entity_links ORDER BY id"
             )
         ]
 

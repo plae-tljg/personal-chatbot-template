@@ -14,6 +14,7 @@
       "knowledge",
       "entity",
       "search",
+      "fallback",
       "refuse"
     ],
     "max_citations": 3,
@@ -30,8 +31,8 @@
     },
     "_ladder_note": "Rungs run in this order. 'fallback' is registered but NOT in the list: it is off by default, and adding it here is what turns it on. See docs/CONCERNS.md C1.",
     "fallback": {
-      "_note": "Consulted only when every rung above refused. It answers the visitor; it does not close the gap -- the turn is still recorded as unresolved, because a model answering is not the same as the tables knowing.",
-      "enabled": false,
+      "_note": "Consulted only when every rung above refused. It answers the visitor; it does not close the gap -- the turn is still recorded as unresolved, because a model answering is not the same as the tables knowing. Any OpenAI-compatible endpoint works: Zen's free pool (default), https://api.deepseek.com/v1/chat/completions with DEEPSEEK_API_KEY, or a local Ollama at http://localhost:11434/v1/chat/completions. Run `pc doctor` to see whether the configured key is actually set.",
+      "enabled": true,
       "endpoint": "https://opencode.ai/zen/v1/chat/completions",
       "model": "space-bunny-free",
       "api_key_env": "OPENCODE_API_KEY",

@@ -60,6 +60,11 @@
   .badge.ref{color:var(--accent);border-color:#2b3a5c}
   .cite{color:var(--accent);text-decoration:none;font-size:12.5px;font-family:var(--mono)}
   .cite:hover{text-decoration:underline}
+  .try{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .try small{color:var(--faint);font-size:11.5px}
+  .try button{background:none;border:1px solid var(--line);color:var(--dim);
+              border-radius:999px;padding:3px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+  .try button:hover{border-color:var(--accent);color:var(--accent)}
   .empty{max-width:760px;margin:40px auto;color:var(--dim)}
   .empty h2{font-size:17px;color:var(--text);margin:0 0 6px}
   .empty p{margin:0 0 18px;font-size:13.5px}
@@ -168,8 +173,18 @@ function turnEl(question, answer, { live = false } = {}) {
       (answer.latency_ms != null ? `<span class="badge">${answer.latency_ms} ms</span>` : "") +
       (live ? `<span class="badge">${answer.source === "fallback" ? "model call" : "0 tokens"}</span>` : "") +
       (answer.citations?.length ? `<span>${citations(answer.citations, live ? bot.data.bot.max_citations : 0)}</span>` : "") +
-    `</div>`;
+    `</div>` +
+    tryRow(answer.suggestions);
   return box;
+}
+
+/* Follow-ups, offered rather than discovered. Only questions this bot can
+   actually answer are suggested, so a click never lands on a refusal. */
+function tryRow(list) {
+  if (!list || !list.length) return "";
+  return `<div class="try"><small>try</small>` +
+    list.map((q) => `<button type="button" data-ask="${esc(q)}">${esc(q)}</button>`).join("") +
+    `</div>`;
 }
 
 function renderEmpty() {
@@ -278,6 +293,11 @@ el("selfcheck").addEventListener("click", () => {
   scrollDown();
 });
 
+inner.addEventListener("click", (ev) => {
+  const btn = ev.target.closest("button[data-ask]");
+  if (btn) submit(btn.dataset.ask);
+});
+
 /* boot */
 const response = await fetch("./data.json");
 bot = createBot(await response.json());
@@ -289,9 +309,13 @@ el("lvl").textContent = `level ${bot.data.bot.level} · ${bot.data.bot.ladder.jo
 el("note-line").innerHTML =
   `${bot.data.entities.length} entities · ${bot.data.knowledge.length} rows<br>` +
   `no server · ${(bot.data.tests || []).length} cases ship with the page<br>`;
+const dropped = bot.data.bot.ladder_dropped || [];
 el("hint").textContent =
   `static page — the ladder runs in your browser, 0 tokens. ` +
-  `references resolve against earlier turns; nothing else is carried across.`;
+  `references resolve against earlier turns; nothing else is carried across.` +
+  (dropped.length
+    ? ` the server build also has ${dropped.join(", ")}; a static page cannot, because it would need an API key in the page.`
+    : "");
 el("meters").innerHTML =
   `<span>knowledge <b>${bot.data.knowledge.length}</b></span>` +
   `<span>entities <b>${bot.data.entities.length}</b></span>` +

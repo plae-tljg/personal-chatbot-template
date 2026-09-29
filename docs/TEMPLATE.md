@@ -1,11 +1,18 @@
-# Using this as a template
+# Reading this as a reference
 
-This repository is two things at once, and it is worth being clear which one you
-want:
+The repository is named `template` in the sense of **a reference implementation
+an agent can clone and read** — point your AI at it, let it explain the idea, and
+copy the parts you want. It is not a GitHub template repository and there is no
+"Use this template" button.
 
-- **a working example** — a bot that answers questions about 42 real
+So there are two ways to read it:
+
+- **as a working example** — a bot that answers questions about 42 real
   repositories, maintained by an agent through pull requests; and
-- **a template** — the pattern, with the content swapped out.
+- **as an argument** — the pattern, with the content swapped out.
+
+If you want the arguments rather than the code, `docs/IDEAS.md` is the index:
+32 ideas, one line each, and where each is argued.
 
 Nothing in `personal_chatbots/`, `db/`, or `web/` is specific to this bot. The
 whole of "whose bot is this" lives in five files.

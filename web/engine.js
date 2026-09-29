@@ -286,8 +286,14 @@ const FILLER = new Set(["what", "is", "who", "about", "the", "tell", "me", "a", 
 
 export function createBot(data) {
   const index = new AliasIndex(data.entities);
-  // key -> entity, for resolving the citations a frame reads back
-  index.entityByKey = new Map(data.entities.map((e) => [e.key, e]));
+  // id -> entity, for links. Not keyed by `key`: a key is unique only within a
+  // type, and `plae-tljg` is both an account and the person who owns it.
+  index.byId = new Map(data.entities.map((e) => [e.id, e]));
+  // key -> entity, for the citations a frame reads back. First wins, matching
+  // Store.entity_by_key's ORDER BY id LIMIT 1 -- a last-wins Map silently picked
+  // the person where Python picked the account.
+  index.entityByKey = new Map();
+  for (const e of data.entities) if (!index.entityByKey.has(e.key)) index.entityByKey.set(e.key, e);
   const byType = new Map();
   for (const e of data.entities) {
     if (!byType.has(e.type)) byType.set(e.type, []);
@@ -324,10 +330,10 @@ export function createBot(data) {
         const links = data.links || [];
         const want = action.direction === "out" ? "from" : "to";
         const other = want === "from" ? "to" : "from";
-        const ids = links
-          .filter((l) => l.type === action.link_type && l[want] === from.key)
-          .map((l) => l[other]);
-        entities = ids.map((k) => index.entityByKey.get(k)).filter((e) => e && e.type === action.entity_type);
+        entities = links
+          .filter((l) => l.type === action.link_type && l[want] === from.id)
+          .map((l) => index.byId.get(l[other]))
+          .filter((e) => e && e.type === action.entity_type);
       } else {
         entities = [...(byType.get(action.entity_type) || [])];
         const order = String(action.order_by || "id");
@@ -371,8 +377,13 @@ export function createBot(data) {
       if (!result.text) continue;
       return {
         text: result.text, source: "knowledge", citations: result.citations,
-        matched: row.slug, slots: Object.fromEntries(
+        matched: row.slug,
+        // `slots` is part of the public answer shape (slot -> key), so the
+        // resolved entities ride alongside it: a key alone cannot be looked up
+        // unambiguously, and the follow-ups need the entity.
+        slots: Object.fromEntries(
           Object.entries(resolved.slots).map(([k, v]) => [k, v.key])),
+        _slotEntities: Object.values(resolved.slots),
       };
     }
     return null;
@@ -438,7 +449,18 @@ export function createBot(data) {
       if (answer && (answer.text || answer.source === "refuse")) break;
     }
     if (!answer || !(answer.text || answer.source === "refuse")) answer = rungRefuse(tokens);
-    return { ...answer, refs, latency_ms: Math.round((performance.now() - started) * 1000) / 1000, tokens: 0 };
+    const resolved = answer._slotEntities || [];
+    delete answer._slotEntities;
+    return {
+      ...answer,
+      refs,
+      suggestions: suggestions(tokens, {
+        exclude: answer.source === "knowledge" ? answer.matched : "",
+        extra: resolved,
+      }),
+      latency_ms: Math.round((performance.now() - started) * 1000) / 1000,
+      tokens: 0,
+    };
   }
 
   /** Run the exported content/tests.yaml — the same cases Python runs. */
@@ -476,7 +498,49 @@ export function createBot(data) {
     return results;
   }
 
-  return { ask, selfCheck, index, data };
+  // -- follow-ups ------------------------------------------------------------
+  //
+  // The same rule as engine.py: only offer a question this bot can actually
+  // answer. A suggestion that would itself refuse is worse than none. Once an
+  // answer has resolved a slot, only that entity is used; after a refusal,
+  // anything the question named is fair game.
+
+  function entitiesInPlay(tokens, extra) {
+    const entities = extra && extra.length ? extra : index.matchesAny(tokens).map((m) => m.entity);
+    const byType = new Map();
+    for (const entity of entities) {
+      if (!byType.has(entity.type)) byType.set(entity.type, []);
+      const bucket = byType.get(entity.type);
+      if (!bucket.some((e) => e.key === entity.key)) bucket.push(entity);
+    }
+    return byType;
+  }
+
+  function example(row, byType) {
+    const pattern = (row.patterns || [])[0];
+    if (!pattern) return "";
+    let rendered = pattern;
+    for (const [slot, type] of Object.entries(row.slots || {})) {
+      const candidates = byType.get(type) || [];
+      if (!candidates.length) return ""; // would not resolve: do not offer it
+      rendered = rendered.split(`{${slot}}`).join(candidates[0].name);
+    }
+    return rendered;
+  }
+
+  function suggestions(tokens, { exclude = "", extra = [], limit = 3 } = {}) {
+    const byType = entitiesInPlay(tokens, extra);
+    const out = [];
+    for (const row of knowledge) {
+      if (row.slug === exclude || row.action?.kind === "refuse") continue;
+      const text = example(row, byType);
+      if (text && !out.includes(text)) out.push(text);
+      if (out.length >= limit) break;
+    }
+    return out;
+  }
+
+  return { ask, selfCheck, suggestions, index, data };
 }
 
 export { compact };

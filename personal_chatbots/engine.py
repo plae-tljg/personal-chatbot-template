@@ -22,7 +22,7 @@ import re
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Sequence
 
 from .config import Config
 from .frame import Frame, apply as apply_frame
@@ -69,6 +69,8 @@ class Answer:
     turn: int = 0
     #: referring phrase -> entity key, e.g. {"the second one": "ellkaimu/Anime-Webview"}
     refs: dict[str, str] = field(default_factory=dict)
+    #: example questions this bot can actually answer right now
+    suggestions: list[str] = field(default_factory=list)
 
     @property
     def refused(self) -> bool:
@@ -414,6 +416,71 @@ class Runtime:
             else self.cfg.refuse_template
         return Answer(text=template, source="refuse", citations=[])
 
+    # -- follow-ups -----------------------------------------------------------
+    #
+    # "Better chatflow" at level 1 is not a state machine; it is telling the
+    # visitor what this bot can actually do. A refusal with three real questions
+    # under it reads as a bot that knows its own limits. A refusal on its own
+    # reads as a bot that is broken.
+    #
+    # The rule that keeps it honest: **a suggestion that would itself refuse is
+    # worse than no suggestion.** So a row is only offered when every slot it
+    # declares can be filled by an entity already in play -- mentioned in this
+    # question, or carried by the answer just given.
+
+    def suggestions(
+        self,
+        tokens: list[str],
+        *,
+        exclude: str = "",
+        extra: Sequence[Entity] = (),
+        limit: int = 3,
+    ) -> list[str]:
+        by_type = self._entities_in_play(tokens, extra)
+        out: list[str] = []
+        for row in self.rows:
+            if row.slug == exclude or row.action.get("kind") == "refuse":
+                continue
+            example = self._example(row, by_type)
+            if example and example not in out:
+                out.append(example)
+            if len(out) >= limit:
+                break
+        return out
+
+    def _entities_in_play(self, tokens: list[str], extra: Sequence[Entity]) -> dict[str, list[Entity]]:
+        """What a follow-up is allowed to be built from.
+
+        Preference order matters. Once an answer has resolved a slot, only that
+        entity is used, because it is the one the bot *proved* it can resolve.
+        Falling back to every alias the question happened to match produced
+        "what have you built with lkm" -- valid, since a `topic:lkm` exists, and
+        useless.
+
+        When nothing resolved (a refusal), anything the question named is fair
+        game, because a grounded suggestion is exactly what a refusal needs.
+        """
+        entities = list(extra) if extra else [m.entity for m in self.index.matches_any(tokens)]
+        by_type: dict[str, list[Entity]] = {}
+        for entity in entities:
+            bucket = by_type.setdefault(entity.entity_type, [])
+            if all(existing.key != entity.key for existing in bucket):
+                bucket.append(entity)
+        return by_type
+
+    def _example(self, row: KnowledgeRow, by_type: dict[str, list[Entity]]) -> str:
+        """Render a row's first pattern against entities already in play."""
+        pattern = row.patterns[0] if row.patterns else ""
+        if not pattern:
+            return ""
+        rendered = pattern
+        for slot, entity_type in row.slots.items():
+            candidates = by_type.get(entity_type, [])
+            if not candidates:
+                return ""  # would not resolve: do not offer it
+            rendered = rendered.replace("{" + slot + "}", candidates[0].name)
+        return rendered
+
     # -- the ladder -----------------------------------------------------------
 
     def ladder(self) -> list[tuple[str, Callable[[list[str]], Answer | None]]]:
@@ -453,6 +520,11 @@ class Runtime:
             answer = self.rung_refuse(tokens)
         answer.latency_ms = round((time.perf_counter() - started) * 1000, 3)
         answer.refs = refs
+        answer.suggestions = self.suggestions(
+            tokens,
+            exclude=answer.matched_slug if answer.source == "knowledge" else "",
+            extra=list(answer.slots.values()),
+        )
         return answer
 
     def ask_and_record(self, question: str, session_id: str | None = None) -> Answer:
