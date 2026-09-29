@@ -25,7 +25,7 @@ the tests protect past gains      a regression fails CI
 the human merges                  the PR is the publish gate
 ```
 
-Not OpenGallery, not the company project: the same pattern, on real public data.
+The same pattern as OpenGallery, on real public data instead of a synthetic museum.
 
 ---
 
@@ -216,7 +216,8 @@ empty tables in the database.
 - **Not autonomous.** The PR gate is the design, not scaffolding.
 - **Not no-code.** New `action_kind`s are new Python. The claim is narrower:
   *new knowledge is data; new primitives are code, and they should be rare.*
-- **Not a company project.** Public data, public judgement (C10).
+- **Public data only.** Ingest reads public GitHub metadata; everything else is
+  hand-written judgement about public work (C10).
 
 ---
 

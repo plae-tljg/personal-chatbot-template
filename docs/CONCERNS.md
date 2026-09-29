@@ -297,15 +297,26 @@ only split into per-locale rows when a real sentence cannot be shared.
 
 ---
 
-## C10 — Scope and privacy
+## C10 — Scope and provenance
 
-**The concern.** The reference project is a company system. Nothing from it may
-leak into this public repository.
+**The concern.** A public example is only trustworthy if a reader can tell what
+is in it and where it came from. Anything that cannot be traced is a liability:
+for the reader, who cannot check it, and for the author, who has to maintain it.
 
-**The answer.** Every entity here is public GitHub data or hand-written
-judgement about public work. No company schema, no metrics, no business rules,
-no origin story. If a pattern or an idea came from work, it is expressed as a
-general technique with a public example — or it is not written down.
+**The answer — one rule, applied everywhere:** every row in this database is
+either public GitHub metadata or hand-written judgement about public work.
+
+- ingest reads four public GitHub accounts and nothing else;
+- `curation.yaml` is editorial judgement about those public repositories, and it
+  is reviewed like any other content;
+- the test fixtures are verbatim snapshots of public READMEs
+  (`tests/fixtures/README.md`);
+- there is no private, client, or employer data anywhere in the repository, and
+  no metric that cannot be recomputed from the files.
+
+If an idea here generalises beyond this project, it is written as a technique
+with a public example. That is the whole of the provenance story, and it is
+checkable: `git log` and `pc entities` show where every row came from.
 
 ---
 

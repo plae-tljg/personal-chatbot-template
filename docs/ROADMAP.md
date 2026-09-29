@@ -169,10 +169,9 @@ Each item has an explicit trigger in `docs/CONCERNS.md`. Do not do them early.
 
 | project | role |
 |---|---|
-| `~/Music/OpenGallery` | synthetic demo; same pattern, bespoke proposals table |
-| `~/Music/personal-chatbots` | same pattern on real data, with git as the review gate |
-| `~/Music/MaaFWPhoneAI` | same pattern outside text, on GUI pipelines |
-| `~/Music/blogs` season 2 | *Wake the AI Less* — the article this feeds |
+| [OpenGallery](https://github.com/plae-tljg/OpenGallery) | synthetic demo; same pattern, bespoke proposals table |
+| this repository | the same pattern on real data, with git as the review gate |
+| [MaaFwPhoneAI](https://github.com/plae-tljg/MaaFwPhoneAI) | the same pattern outside text, on GUI pipelines |
 
 Article hooks, cheapest-first:
 

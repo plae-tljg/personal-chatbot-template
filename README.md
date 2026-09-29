@@ -271,16 +271,17 @@ docs/ROADMAP.md            what is built, what waits, and the trigger for each
 
 ## Boundaries
 
-Not RAG, not text-to-SQL, not autonomous, not no-code, not the company project.
-See `docs/DESIGN.md` §8.
+Not RAG, not text-to-SQL, not autonomous, not no-code. See `docs/DESIGN.md` §8.
 
 ## License
 
-MIT — see `LICENSE`. The bot's content is public GitHub metadata plus
-hand-written judgement about public work; nothing here comes from an employer
-project (`docs/CONCERNS.md` C10).
+MIT — see `LICENSE`. Everything the bot knows is public GitHub metadata plus
+hand-written judgement about public work. There is no private or client data in
+this repository (`docs/CONCERNS.md` C10).
 
 ## Related
 
-- `~/Music/OpenGallery` — the synthetic demo; same pattern, bespoke review table
-- `~/Music/blogs` season 2 — *Wake the AI Less*, the article this feeds
+- [OpenGallery](https://github.com/plae-tljg/OpenGallery) — the synthetic demo of
+  the same pattern, with a bespoke review table instead of git
+- [MaaFwPhoneAI](https://github.com/plae-tljg/MaaFwPhoneAI) — the same pattern
+  outside text, on Android GUI pipelines
