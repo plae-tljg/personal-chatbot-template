@@ -5,7 +5,7 @@ out of `content/*.yaml` plus GitHub metadata. A coding agent maintains the
 content. Git is the review gate. **No model runs while serving.**
 
 **Status: v1 runs.** 42 repositories across four GitHub identities, 174 entities,
-10 knowledge rows, 8 seeded cases, 102 unit + invariant tests, and a browser
+11 knowledge rows, 14 seeded cases, 103 unit + invariant tests, and a browser
 engine that CI checks agrees with the Python one. Answers land in
 0.1–1 ms at zero tokens.
 

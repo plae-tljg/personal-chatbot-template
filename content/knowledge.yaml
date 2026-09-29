@@ -41,10 +41,31 @@
     - "what is {repo} about"
     - "tell me about {repo}"
     - "what does {repo} do"
+    # 访客会说 "the three body simulation"，冠词留在槽位外面。
+    - "what is the {repo} about"
+    - "tell me about the {repo}"
+    - "what does the {repo} do"
   slots: { repo: repo }
   action:
     kind: answer
     template: "{repo} — {repo.summary}"
+
+# 归属是一个新的问句形状（不是 "about" 的复述）：谁做的，不是做什么。
+# 答案走已有的 owned_by 链接，不写死任何人名。
+- slug: repo.author
+  patterns:
+    - "who made {repo}"
+    - "who made the {repo}"
+    - "who created {repo}"
+    - "who wrote {repo}"
+    - "who owns {repo}"
+  slots: { repo: repo }
+  action:
+    kind: list
+    entity_type: account
+    link_type: owned_by
+    direction: out           # repo --owned_by--> account
+    template: "{name}"
 
 - slug: repo.list
   patterns:

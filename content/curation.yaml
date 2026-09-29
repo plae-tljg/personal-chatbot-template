@@ -43,6 +43,13 @@ entities:
     name: Finance
     summary: "Money, budgeting and personal-finance tooling."
 
+  # GitHub topics 里没有 machine-learning，访客的问法就落不到任何一个 topic 上。
+  # 成员是判断，不是抓取：每个仓库的描述都明确提到模型 / 训练 / transformer。
+  - type: topic
+    key: topic:machine-learning
+    name: Machine Learning
+    summary: "Projects that port, train, or apply ML models: TTS and voice conversion, RAG, and transformers."
+
 # 覆盖 ingest 出来的字段。两边合并时这里的优先级更高，
 # 所以重新 ingest 不会覆盖掉人工/AI 的判断。
 #
@@ -71,3 +78,25 @@ overrides:
 
   - key: "plae-lkm/Finance_Lux_Web"
     add_links: [{ type: tagged, to: "topic:finance" }]
+
+  # 命名近失误：仓库描述写的是 "2d three body system animation"，
+  # 访客会说 "three body simulation"。机械生成的 alias 抓不到这个说法。
+  - key: "plae-lkm/ThreeBodySystemAnimation"
+    add_aliases: ["three body simulation"]
+
+  # ML 分组的成员。GitHub 的 topics 是 gpt-sovits / transformers / pike-rag 这类
+  # 细标签，没有一个访客会用的 "machine learning"；这里补的是归类，不是事实。
+  - key: "LKM-Repo/GPT-SoVITS-Musa"
+    add_links: [{ type: tagged, to: "topic:machine-learning" }]
+
+  - key: "LKM-Repo/so-vits-svc-musa"
+    add_links: [{ type: tagged, to: "topic:machine-learning" }]
+
+  - key: "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa"
+    add_links: [{ type: tagged, to: "topic:machine-learning" }]
+
+  - key: "LKM-Repo/PIKE-RAG_Verbose"
+    add_links: [{ type: tagged, to: "topic:machine-learning" }]
+
+  - key: "LKM-Repo/Transformer-Implementation-C-Python"
+    add_links: [{ type: tagged, to: "topic:machine-learning" }]

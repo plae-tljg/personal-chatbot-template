@@ -170,13 +170,25 @@ CREATE INDEX IF NOT EXISTS idx_messages_slug ON messages (matched_slug);
 -- 视图：人和 AI 读同一组数字（统计一律现算，不存计数器）
 -- ============================================================================
 
--- AI 的收件箱：真实问过、结构答不出来的问题，按形状聚类
+-- AI 的收件箱：真实问过、结构答不出来的问题，按形状**聚类**。
+--
+-- 一处 GROUP BY，不是一个窗口函数：窗口函数会每个 message 返回一行，同一个问句
+-- 问十次就在收件箱里出现十行。收件箱要回答的是"有多少种问题答不出来、各被问了
+-- 几次"，不是"有多少条消息"。这个 bug 在第一次真跑一圈时就被看到了。
 CREATE VIEW IF NOT EXISTS v_unresolved_inbox AS
-SELECT m.id AS message_id, m.normalized, m.content, m.session_id, m.created_at,
-       COUNT(*) OVER (PARTITION BY m.normalized) AS same_shape_count
+SELECT
+  MIN(m.id)         AS message_id,
+  m.normalized,
+  (SELECT x.content FROM messages x
+    WHERE x.normalized = m.normalized AND x.unresolved = 1 AND x.role = 'user'
+    ORDER BY x.id DESC LIMIT 1)  AS content,
+  COUNT(*)          AS same_shape_count,
+  MIN(m.created_at) AS first_at,
+  MAX(m.created_at) AS last_at
 FROM messages m
 WHERE m.unresolved = 1 AND m.role = 'user'
-ORDER BY same_shape_count DESC, m.created_at DESC;
+GROUP BY m.normalized
+ORDER BY same_shape_count DESC, last_at DESC;
 
 -- 各级回答占比：refuse 的比例就是 kappa 的反面
 CREATE VIEW IF NOT EXISTS v_resolution_mix AS

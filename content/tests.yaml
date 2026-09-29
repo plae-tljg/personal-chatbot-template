@@ -58,3 +58,46 @@
   question: "what is Finance-Management about?"
   expect:
     refuses: true
+
+# ---- 命名近失误：curation alias 让访客的说法能解析到仓库（防"过严"） ----
+- slug: repo.about.three-body-alias
+  question: "what is the three body simulation about"   # traffic: "who made the three body simulation?"
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-lkm/ThreeBodySystemAnimation" }
+    answer_contains: ["three body"]
+
+# ---- 归属：新形状，答案来自 owned_by 链接，不是模板里的名字 ----
+- slug: repo.author.three-body
+  question: "who made the three body simulation?"   # verbatim from the inbox
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-lkm/ThreeBodySystemAnimation" }
+    answer_contains: ["plae-lkm"]
+    cites: ["plae-lkm"]
+
+# ---- curation 分组：GitHub 没有 machine-learning topic，访客的问法必须命中 ----
+- slug: repo.by_topic.machine-learning
+  question: "do you have anything for machine learning?"   # verbatim from the inbox
+  expect:
+    source: knowledge
+    answer_contains: ["GPT-SoVITS-Musa"]
+
+# ---- 易混负例：新的宽 topic 不能吞掉已有的窄 topic ----
+- slug: confusable.machine-learning-vs-learning
+  question: "do you have anything for learning?"
+  expect:
+    source: knowledge
+
+# ---- 易混负例：归属行有 {repo} 槽位，不能抢 "who is LKM?" 这种人物问题 ----
+- slug: confusable.author-vs-person
+  question: "who is LKM?"
+  expect:
+    source: knowledge
+    resolves: { person: "plae-tljg" }
+
+# ---- 拒答例：词表里没有 Rust，也不能凭空造一个（防编造） ----
+- slug: refuse.rust-language
+  question: "which projects use Rust?"   # verbatim from the inbox
+  expect:
+    refuses: true

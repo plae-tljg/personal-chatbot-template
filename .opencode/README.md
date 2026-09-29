@@ -163,15 +163,24 @@ This config is written against the opencode docs
 edit boundary refuses what it should (above), the validator catches a bad
 content edit, and `pc build && pc test` is green offline.
 
-**Not finished:** seven rounds were run and **none reached an edit**. Rounds with
-`opencode/space-bunny-free` did competent reconnaissance and then stopped;
-`deepseek/deepseek-flash` got as far as correctly diagnosing a near-miss —
-`ThreeBodySystemAnimation` carries the alias `three body system animation` but
-not `three body simulation`, so the question refuses — and then stopped without
-writing the pattern.
+**And it has now completed a round.** `deepseek/deepseek-flash` took the seeded
+inbox from kappa 20% to 53%: it added a curated `machine-learning` grouping (a
+judgement GitHub does not carry), the missing `three body simulation` alias, the
+missing article patterns, a new `repo.author` row answered from the existing
+`owned_by` link, and **six** cases — including two confusable negatives, one
+guarding that the new broad topic does not swallow a narrower one and one
+guarding that `repo.author` does not steal "who is LKM?". It also correctly
+*declined* to fix "which projects use Rust?", because no Rust repository exists.
 
-So the loop is **wired and safe, but not yet demonstrated end to end**. The gap
-is agent capability, not the design: the config is model-agnostic, so a stronger
-model is a one-line change in `opencode.json`. That is the honest state of it.
+`pc test` went from 8 cases to 14, all green.
+
+The smaller free model (`opencode/space-bunny-free`) did competent reconnaissance
+across two attempts and never committed to an edit. Model choice is one line in
+`opencode.json`; the review gate is what makes that safe to change.
+
+**A correction on the record:** an earlier version of this file said none of the
+seven rounds reached an edit. That was wrong — it came from reading round 7's log
+mid-run and then deleting it. The round had finished. A snapshot taken too early
+is not evidence, which is the same reason the tests exist.
 
 Everything that *is* verified was verified offline, with no network.

@@ -32,7 +32,7 @@ LIVE_TABLES = ("messages",)
 #: with "no such table" -- a 500 from the server and an opaque traceback from the
 #: CLI. Both of those send you looking in the wrong place; the actual fix is one
 #: command, and the error should say so.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 class SchemaTooOld(RuntimeError):

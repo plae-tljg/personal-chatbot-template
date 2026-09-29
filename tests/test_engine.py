@@ -81,6 +81,20 @@ class RecordingTest(BuiltCase):
             inbox = [r["content"] for r in store.unresolved_inbox(10)]
         self.assertIn("do you do weddings?", inbox)
 
+    def test_the_inbox_clusters_by_shape_not_by_message(self):
+        # Asking the same thing three times is ONE item with a count of three.
+        # A window function here returned one row per message, which is a wall of
+        # duplicates as soon as there is any traffic.
+        # its own wording, so another test in this class cannot inflate the count
+        question = "do you rent out the rooftop for bar mitzvahs?"
+        for _ in range(3):
+            self.runtime.ask_and_record(question, session_id="dup")
+        with Store(self.cfg.db_path) as store:
+            rows = store.unresolved_inbox(200)
+        matching = [r for r in rows if "bar mitzvahs" in (r["content"] or "")]
+        self.assertEqual(len(matching), 1, "the inbox should hold one row per shape")
+        self.assertEqual(matching[0]["same_shape_count"], 3)
+
     def test_answers_are_not_unresolved(self):
         with Store(self.cfg.db_path) as store:
             before = store.count_messages()
