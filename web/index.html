@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ask LKM</title>
+<style>
+  :root {
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1d2129; --line:#262b36;
+    --text:#e7e9ee; --dim:#8b93a5; --faint:#5d6577;
+    --accent:#7aa2f7; --ok:#9ece6a; --refuse:#e0af68; --bad:#f7768e;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:15px/1.62 system-ui,-apple-system,"Segoe UI",sans-serif;
+       display:flex;overflow:hidden}
+  aside{width:264px;flex:0 0 264px;background:#12151b;border-right:1px solid var(--line);
+        display:flex;flex-direction:column;height:100vh}
+  .brand{padding:15px 16px 8px}
+  .brand b{font-size:15px}
+  .brand span{display:block;color:var(--faint);font-size:11.5px;margin-top:2px}
+  .new{margin:6px 12px 10px;padding:9px 12px;border-radius:8px;cursor:pointer;
+       border:1px solid var(--line);background:var(--panel);color:var(--text);
+       font:inherit;font-size:13.5px;text-align:left}
+  .new:hover{border-color:var(--accent)}
+  .list{flex:1;overflow-y:auto;padding:0 8px 12px}
+  .item{padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px;display:flex;gap:8px;align-items:baseline}
+  .item:hover{background:var(--panel)} .item.on{background:var(--panel-2)}
+  .item .t{flex:1;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .m{font-family:var(--mono);font-size:10.5px;color:var(--faint);white-space:nowrap}
+  .item .x{opacity:0;color:var(--faint);font-size:15px;padding:0 2px}
+  .item:hover .x{opacity:1} .item .x:hover{color:var(--bad)}
+  .side-note{padding:10px 14px;border-top:1px solid var(--line);font-family:var(--mono);
+             font-size:10.5px;color:var(--faint);line-height:1.75}
+  .side-note button{width:100%;margin-top:8px;padding:7px;border-radius:7px;cursor:pointer;
+                    border:1px solid var(--line);background:var(--panel);color:var(--text);
+                    font:inherit;font-size:11.5px}
+  .side-note button:hover{border-color:var(--accent)}
+  main{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0}
+  header{padding:13px 22px;border-bottom:1px solid var(--line);display:flex;
+         align-items:baseline;gap:12px;flex-wrap:wrap}
+  header h1{margin:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+  header .lvl{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .meters{margin-left:auto;display:flex;gap:14px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .meters b{color:var(--ok);font-weight:500}
+  #log{flex:1;overflow-y:auto;padding:22px 22px 8px}
+  .inner{max-width:760px;margin:0 auto}
+  .turn{margin:0 0 22px}
+  .q{font-weight:500;margin-bottom:9px;white-space:pre-wrap}
+  .q::before{content:"› ";color:var(--accent)}
+  .a{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+     padding:13px 16px;white-space:pre-wrap;overflow-wrap:anywhere}
+  .a.refuse{border-color:#4a3a1e;color:#d8c9a8}
+  .meta{margin-top:9px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .badge{padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim);
+         font-family:var(--mono);font-size:11px}
+  .badge.ok{color:var(--ok);border-color:#2f4a24}
+  .badge.refuse{color:var(--refuse);border-color:#4a3a1e}
+  .badge.ref{color:var(--accent);border-color:#2b3a5c}
+  .cite{color:var(--accent);text-decoration:none;font-size:12.5px;font-family:var(--mono)}
+  .cite:hover{text-decoration:underline}
+  .empty{max-width:760px;margin:40px auto;color:var(--dim)}
+  .empty h2{font-size:17px;color:var(--text);margin:0 0 6px}
+  .empty p{margin:0 0 18px;font-size:13.5px}
+  .empty .s{display:block;padding:7px 0;cursor:pointer;font-size:14px;border-bottom:1px solid var(--line)}
+  .empty .s:hover{color:var(--accent)}
+  .check{margin:14px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .check .row{display:flex;gap:10px;padding:6px 12px;font-family:var(--mono);font-size:11.5px;
+              border-bottom:1px solid var(--line)}
+  .check .row:last-child{border-bottom:0}
+  .check .row.pass span:first-child{color:var(--ok)}
+  .check .row.fail span:first-child{color:var(--bad)}
+  form{padding:12px 22px 18px}
+  .field{max-width:760px;margin:0 auto;display:flex;gap:10px;background:var(--panel);
+         border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px}
+  .field:focus-within{border-color:var(--accent)}
+  input[type=text]{flex:1;background:none;border:0;color:var(--text);font:inherit;outline:none;padding:6px 0}
+  button.go{background:var(--accent);color:#0f1115;border:0;border-radius:8px;padding:8px 16px;
+            font:inherit;font-weight:600;cursor:pointer}
+  button.go:disabled{opacity:.45;cursor:default}
+  .hint{max-width:760px;margin:8px auto 0;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand"><b id="brand">Ask LKM</b><span id="tag"></span></div>
+  <button class="new" id="new">＋&nbsp; New chat</button>
+  <div class="list" id="list"></div>
+  <div class="side-note" id="note">
+    <span id="note-line"></span>
+    <button id="selfcheck">run the frozen cases here</button>
+  </div>
+</aside>
+
+<main>
+  <header>
+    <h1 id="title">New chat</h1>
+    <span class="lvl" id="lvl"></span>
+    <div class="meters" id="meters"></div>
+  </header>
+  <div id="log"><div class="inner" id="inner"></div></div>
+  <form id="form" autocomplete="off">
+    <div class="field">
+      <input type="text" id="q" placeholder="ask about the work…" maxlength="500" />
+      <button class="go" id="send" type="submit">Ask</button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </form>
+</main>
+
+<script type="module">
+import { createBot } from "./engine.js";
+
+const el = (id) => document.getElementById(id);
+const listEl = el("list"), inner = el("inner"), logEl = el("log");
+const STORE = "ask-lkm.sessions.v1";
+
+const SAMPLES = [
+  "what projects does LKM have?",
+  "what is dsh-review about?",
+  "which projects use Kotlin?",
+  "what have you built with finance?",
+  "what is the Voice Cloning on MUSA project?",
+  "do you do weddings?"
+];
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* Sessions live in localStorage: there is no server to keep them in, which is
+   the point of this page. The transcript is what the frame reads back for
+   "the second one", so it has to persist somewhere. */
+const load = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } };
+const save = (all) => localStorage.setItem(STORE, JSON.stringify(all));
+
+let sessions = load();
+let current = null;
+let bot = null;
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
+
+function citations(items, cap) {
+  const all = items || [];
+  const shown = cap ? all.slice(0, cap) : all;
+  const links = shown.map((c) => c.url
+    ? `<a class="cite" href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.label || c.key)}</a>`
+    : `<span class="badge">${esc(c.key)}</span>`).join(" ");
+  const rest = all.length - shown.length;
+  return links + (rest > 0 ? ` <span class="badge">+${rest}</span>` : "");
+}
+
+const refBadges = (refs) => Object.entries(refs || {}).map(([phrase, key]) =>
+  `<span class="badge ref">“${esc(phrase)}” → ${esc(key)}</span>`).join(" ");
+
+function turnEl(question, answer, { live = false } = {}) {
+  const box = document.createElement("div");
+  box.className = "turn";
+  const refused = answer.source === "refuse";
+  box.innerHTML =
+    `<div class="q">${esc(question)}</div>` +
+    `<div class="a${refused ? " refuse" : ""}">${esc(answer.text)}</div>` +
+    `<div class="meta">` + refBadges(answer.refs) +
+      `<span class="badge ${refused ? "refuse" : "ok"}">${refused ? "refused — recorded" : "from tables"}</span>` +
+      (answer.source ? `<span class="badge">${esc(answer.source)}${answer.matched ? ":" + esc(answer.matched) : ""}</span>` : "") +
+      (answer.latency_ms != null ? `<span class="badge">${answer.latency_ms} ms</span>` : "") +
+      (live ? `<span class="badge">0 tokens</span>` : "") +
+      (answer.citations?.length ? `<span>${citations(answer.citations, live ? bot.data.bot.max_citations : 0)}</span>` : "") +
+    `</div>`;
+  return box;
+}
+
+function renderEmpty() {
+  inner.innerHTML =
+    `<div class="empty"><h2>${esc(bot.data.bot.name)}</h2>` +
+    `<p>${esc(bot.data.bot.tagline || "")}</p>` +
+    SAMPLES.map((s) => `<span class="s">${esc(s)}</span>`).join("") + `</div>`;
+  inner.querySelectorAll(".s").forEach((n) => n.addEventListener("click", () => submit(n.textContent)));
+}
+
+function renderTranscript() {
+  const session = sessions[current];
+  if (!session || !session.turns.length) { renderEmpty(); return; }
+  inner.innerHTML = "";
+  for (const turn of session.turns) inner.appendChild(turnEl(turn.question, turn, { live: false }));
+  scrollDown();
+}
+
+const scrollDown = () => { logEl.scrollTop = logEl.scrollHeight; };
+
+function renderList() {
+  const entries = Object.entries(sessions).sort((a, b) => b[1].at - a[1].at);
+  listEl.innerHTML = "";
+  if (!entries.length) {
+    listEl.innerHTML = `<div class="item"><span class="t" style="color:var(--faint)">no chats yet</span></div>`;
+    return;
+  }
+  for (const [id, s] of entries) {
+    const node = document.createElement("div");
+    node.className = "item" + (id === current ? " on" : "");
+    const when = new Date(s.at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    node.innerHTML = `<span class="t">${esc(s.title)}</span>` +
+      `<span class="m">${s.turns.length} · ${esc(when)}</span><span class="x" title="delete">×</span>`;
+    node.addEventListener("click", (ev) => {
+      if (ev.target.classList.contains("x")) {
+        delete sessions[id];
+        save(sessions);
+        if (id === current) { current = null; newChat(); } else renderList();
+        return;
+      }
+      current = id;
+      el("title").textContent = s.title;
+      renderTranscript();
+      renderList();
+    });
+    listEl.appendChild(node);
+  }
+}
+
+function newChat() {
+  current = null;
+  el("title").textContent = "New chat";
+  renderEmpty();
+  renderList();
+  el("q").focus();
+}
+
+async function submit(question) {
+  question = (question || "").trim();
+  if (!question) return;
+  el("send").disabled = true;
+
+  const pending = document.createElement("div");
+  pending.className = "turn";
+  pending.innerHTML = `<div class="q">${esc(question)}</div><div class="a" style="color:var(--faint)">…</div>`;
+  if (inner.querySelector(".empty")) inner.innerHTML = "";
+  inner.appendChild(pending);
+  scrollDown();
+
+  const prior = current ? sessions[current].turns : [];
+  const answer = bot.ask(question, prior);
+
+  if (!current) {
+    current = newId();
+    sessions[current] = { title: question.length > 60 ? question.slice(0, 60) + "…" : question, at: Date.now(), turns: [] };
+  }
+  sessions[current].at = Date.now();
+  sessions[current].turns.push({ question, ...answer });
+  save(sessions);
+
+  pending.replaceWith(turnEl(question, answer, { live: true }));
+  el("title").textContent = sessions[current].title;
+  scrollDown();
+  renderList();
+}
+
+el("form").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const value = el("q").value;
+  el("q").value = "";
+  submit(value).finally(() => { el("send").disabled = false; el("q").focus(); });
+});
+el("new").addEventListener("click", newChat);
+
+el("selfcheck").addEventListener("click", () => {
+  const results = bot.selfCheck();
+  const passed = results.filter((r) => r.passed).length;
+  const box = document.createElement("div");
+  box.className = "check";
+  box.innerHTML = results.map((r) =>
+    `<div class="row ${r.passed ? "pass" : "fail"}"><span>${r.passed ? "ok" : "FAIL"}</span>` +
+    `<span>${esc(r.slug)}</span></div>`).join("") +
+    `<div class="row"><span>${passed}/${results.length}</span><span>frozen cases, in your browser</span></div>`;
+  if (inner.querySelector(".empty")) inner.innerHTML = "";
+  inner.appendChild(box);
+  scrollDown();
+});
+
+/* boot */
+const response = await fetch("./data.json");
+bot = createBot(await response.json());
+
+el("brand").textContent = bot.data.bot.name;
+document.title = bot.data.bot.name;
+el("tag").textContent = bot.data.bot.tagline || "";
+el("lvl").textContent = `level ${bot.data.bot.level} · ${bot.data.bot.ladder.join(" → ")}`;
+el("note-line").innerHTML =
+  `${bot.data.entities.length} entities · ${bot.data.knowledge.length} rows<br>` +
+  `no server · ${(bot.data.tests || []).length} cases ship with the page<br>`;
+el("hint").textContent =
+  `static page — the ladder runs in your browser, 0 tokens. ` +
+  `references resolve against earlier turns; nothing else is carried across.`;
+el("meters").innerHTML =
+  `<span>knowledge <b>${bot.data.knowledge.length}</b></span>` +
+  `<span>entities <b>${bot.data.entities.length}</b></span>` +
+  `<span>tokens <b>0</b></span>`;
+
+renderEmpty();
+renderList();
+</script>
+</body>
+</html>

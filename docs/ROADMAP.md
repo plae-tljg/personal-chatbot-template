@@ -52,6 +52,43 @@ later is a feature, defer it. If adding it later is a rewrite, build it now.
 
 ---
 
+## The static build
+
+`web/` runs the same ladder in the browser, from a JSON snapshot. This is what
+"mostly static webpage" turns out to cost: one export command and a file host.
+
+The interesting part is not the port, it is that the port is *checked*.
+`pc export` ships `content/tests.yaml` inside `data.json`, `web/parity.mjs` runs
+those cases against the JS engine, and CI fails on any disagreement. Without
+that, two implementations of one interpreter drift within a month — someone adds
+an ordinal to `vocabulary.py`, and the browser quietly keeps the old behaviour
+with nothing able to notice.
+
+## What running the agent for real found
+
+Six rounds were run through `opencode` with `opencode.json` enforcing the
+boundary. The wiring works; the findings are about the gap between "the agent is
+allowed to do this" and "the agent can":
+
+| Finding | Fix |
+|---|---|
+| The agent tried to load `maintain-round` as an opencode **skill**; `skills/*.md` is not a skill, it is a file | frontmatter + `.opencode/skills/maintain-round/SKILL.md` symlink; opencode now discovers it |
+| It reached for raw `sqlite3` to inspect the vocabulary | `pc entities` and `pc knowledge`; `sqlite3` explicitly denied |
+| `pc entities topic` capped at 40 of 115 topics, so it could not see a whole type | default limit raised to 200; an empty result now explains itself |
+| The skill said "your tools are the `pc` commands" — but `pc` only exists after `pip install -e .` | the skill uses `python -m personal_chatbots`, which needs no install |
+| It tried `ls -R src`; there is no `src/` | the skill says so |
+
+The general lesson is worth keeping: **a boundary is only usable if the allowed
+surface is sufficient.** Every refusal sent the agent looking for a way around
+rather than a way through, which is the opposite of what a permission rule is
+for. Each gap above was found by watching the agent get stuck, not by reasoning
+about the config.
+
+Two rounds with a small free model did reconnaissance correctly and then never
+committed to an edit. That is a model-capability finding, not a design one —
+which is itself the argument for keeping the model choice swappable and the
+loop's output reviewable.
+
 ## Next: the first real maintenance round
 
 The engine is done; the loop has not yet been run for real. That is the next

@@ -1,5 +1,6 @@
-# build artifacts -- the database is reproducible from content/ + ingest
+# build artifacts -- both are reproducible from content/ + ingest
 data/
+web/data.json
 
 # python
 __pycache__/

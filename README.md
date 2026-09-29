@@ -5,7 +5,8 @@ out of `content/*.yaml` plus GitHub metadata. A coding agent maintains the
 content. Git is the review gate. **No model runs while serving.**
 
 **Status: v1 runs.** 42 repositories across four GitHub identities, 174 entities,
-10 knowledge rows, 8 seeded cases, 102 unit + invariant tests. Answers land in
+10 knowledge rows, 8 seeded cases, 102 unit + invariant tests, and a browser
+engine that CI checks agrees with the Python one. Answers land in
 0.1–1 ms at zero tokens.
 
 ## Quickstart
@@ -122,6 +123,32 @@ Two honest notes about what "multi-round" means at level 1:
 Transcripts are the visitor's own data, so `DELETE` really deletes. The
 "archive, never delete" rule protects *knowledge*, where a past answer must stay
 explicable.
+
+## It also runs as a static page
+
+The ladder is a small interpreter over rows, and the rows are data — so the rows
+ship as JSON and the whole bot runs client-side.
+
+```bash
+python -m personal_chatbots export
+python -m http.server -d web 8080
+```
+
+No server process, no database, no keys, nothing on the request path that can
+fail or be billed. Open `web/index.html` and press **run the frozen cases here**:
+the same eight assertions the Python runtime runs pass in your browser.
+
+Two implementations of one interpreter would normally drift. What stops it is
+that `pc export` ships `content/tests.yaml` inside `data.json`, so the browser
+engine can run the same cases, and CI checks it:
+
+```bash
+python -m personal_chatbots export && node web/parity.mjs
+# 8/8 cases agree with the Python runtime
+```
+
+`web/README.md` has the honest list of what differs (sessions live in
+`localStorage`, search has no FTS index, `data.json` is a build artifact).
 
 ## Four things, four homes
 

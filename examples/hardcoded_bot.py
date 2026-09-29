@@ -56,12 +56,14 @@ Run it:
     python examples/hardcoded_bot.py "how much are the volt earbuds"
     python examples/hardcoded_bot.py "你好吗"
     python examples/hardcoded_bot.py --demo          # the price contradiction
-    python examples/hardcoded_bot.py --echo-demo     # the fallback problem
+    python examples/hardcoded_bot.py --echo-demo     # both fallback modes
+    SHOP_FALLBACK=mirror python examples/hardcoded_bot.py "..."   # opt in to it
     python examples/hardcoded_bot.py                 # REPL
 """
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 
@@ -310,18 +312,41 @@ def product_line(product: str, zh: bool) -> str:
 # ===========================================================================
 
 
-def fallback(question: str) -> str:
-    """Mirror the customer's own words back in a friendly frame.
+#: "refuse" (default) or "mirror". Set SHOP_FALLBACK=mirror to turn the
+#: mirroring on. It is off by default because it is the one setting in this file
+#: that makes the bot *worse* the longer it runs -- see the note below.
+FALLBACK_MODE = os.environ.get("SHOP_FALLBACK", "refuse").strip().lower()
 
-    This is a real pattern, and it is the most damaging thing in this file,
-    because it is the *opposite* of a failure signal:
+#: Every question the rules could not answer. In memory, which is the point:
+#: it dies with the process, so nobody can act on it. Replacing this list with a
+#: table is most of what personal-chatbots does.
+MISSES: list[str] = []
+
+
+def fallback(question: str) -> str:
+    """Record the miss, then choose between honesty and a friendly mirror."""
+    MISSES.append(question)
+    if FALLBACK_MODE == "mirror":
+        return mirror(question)
+    return ("I don't know about that. I have written it down for the team."
+            if not is_chinese(question)
+            else "这个我不清楚，我已经记下来给团队了。")
+
+
+def mirror(question: str) -> str:
+    """Reflect the customer's own words back in a friendly frame.
+
+    Kept as an option because people do reach for it, and it is worth seeing
+    exactly what it does. It is **off by default** because it is the opposite of
+    a failure signal:
 
         "do you ship to Portugal?"   -> "Yes, we do ship to Portugal."
         "can i pay in instalments?"  -> "Yes, you can pay in instalments."
 
     Both are commitments invented from the customer's phrasing. The shop never
-    said them. And because every question now gets a reply, nobody can learn
-    which questions the rules actually missed.
+    said them. Worse, a mirrored reply is indistinguishable from a real answer in
+    any log you keep, so the list of things the rules cannot do stops growing --
+    and a list that stops growing is a bot that stops improving.
     """
     q = question.strip().rstrip("?.!。？")
 
@@ -396,28 +421,49 @@ def demo() -> None:
 
 
 def echo_demo() -> None:
-    print("What the fallback does with questions the rules cannot answer:\n")
-    for q in [
+    global FALLBACK_MODE
+
+    questions = [
         "do you ship to Portugal?",
         "can i pay in instalments?",
         "is the beacon hub available",
         "tell me more about the second one",
         "你好吗",
-    ]:
-        print(f'    {q!r:44} -> {fallback(q)!r}')
+    ]
 
-    print("\nNone of those is an answer, and they fail in three different ways:")
-    print("the first three are commitments invented from the customer's own")
-    print("wording, the fourth is fluent and empty, and a mirror with no matching")
-    print("rule produces visibly broken grammar. All five got a reply, and none")
-    print("of the five left a trace.")
-    print("\nThe damage is not the wrong answers. It is that the failure signal is")
-    print("gone: there is no longer any question the bot *admits* it could not")
-    print("answer, so nothing on disk records what the rules are missing. The")
-    print("list of gaps can never shrink, because it is never written down.")
-    print("\npersonal-chatbots refuses instead, and the refusal is a row in the")
-    print("inbox with a count. Losing a sale to an honest 'I don't know' is")
-    print("cheaper than keeping one with an invented 'yes'.")
+    original, FALLBACK_MODE = FALLBACK_MODE, "refuse"
+    print("Default (SHOP_FALLBACK=refuse) — the bot says it does not know:\n")
+    for q in questions[:3]:
+        print(f'    {q!r:42} -> {fallback(q)!r}')
+    print(f"\n    MISSES: {MISSES}")
+    print("\n    A human reading these conversations sees the gap immediately.")
+    print("    Two problems remain, and they are why the list alone is not enough:")
+    print("    it lives in a Python list, so it dies with the process, and nobody")
+    print("    counts it, clusters it, or ever reads it.")
+
+    MISSES.clear()
+    FALLBACK_MODE = "mirror"
+    print("\nOption (SHOP_FALLBACK=mirror) — off by default:\n")
+    for q in questions:
+        print(f'    {q!r:42} -> {fallback(q)!r}')
+    print(f"\n    MISSES: {len(MISSES)} entries, same as before.")
+
+    print("\n    The list is identical. What changed is the *transcript* — the thing")
+    print("    a human actually reads. These replies look like answers, so nobody")
+    print("    scanning conversations can tell which questions the shop really")
+    print("    answered and which ones it parroted back. The one artifact that")
+    print("    carried the signal now hides it.")
+    print("\n    And the first three are commitments invented from the customer's")
+    print("    own wording. The shop never made them.")
+
+    MISSES.clear()
+    FALLBACK_MODE = original
+
+    print("\nSo: record the miss, and say you do not know. Both halves matter —")
+    print("refusing without recording loses the to-do list, and recording without")
+    print("refusing loses the only place a human can see it.")
+    print("personal-chatbots does both, and the record is a table that survives")
+    print("restarts and gets counted.")
 
 
 # ===========================================================================
@@ -440,7 +486,7 @@ def main(argv: list[str]) -> int:
         print(answer(" ".join(argv)))
         return 0
 
-    print("hardcoded-shop-bot. ctrl-d to quit.")
+    print(f"hardcoded-shop-bot. fallback={FALLBACK_MODE}. ctrl-d to quit.")
     while True:
         try:
             line = input("> ").strip()

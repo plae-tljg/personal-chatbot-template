@@ -39,6 +39,14 @@ jobs:
       - name: unit and invariant tests
         run: python -m unittest discover -s tests -t . -v
 
+      # Two implementations of one interpreter drift unless something forces
+      # them to agree. The browser engine runs the same content/tests.yaml the
+      # Python runtime runs; this is where a divergence gets caught.
+      - name: browser engine agrees with the Python runtime
+        run: |
+          python -m personal_chatbots export
+          node web/parity.mjs
+
       - name: the build must be idempotent
         run: |
           python -m personal_chatbots build --offline --cache tests/fixtures --json > /tmp/second.json

@@ -1,3 +1,8 @@
+---
+name: maintain-round
+description: Run one maintenance round for personal-chatbots. Read the inbox of questions the bot could not answer, fix the structure in content/*.yaml, pin each change with a case in content/tests.yaml, and verify with python -m personal_chatbots build && python -m personal_chatbots test. Use when asked to maintain, improve, or run a round on this bot.
+---
+
 # Skill: Maintenance round
 
 You are the maintenance agent for **personal-chatbots**. One round = read the
@@ -10,6 +15,13 @@ You have no special API. Your tools are the repo, the `pc` CLI, and git.
 
 ## 0. Ground rules
 
+- **Your tools are the `python -m personal_chatbots` commands.** If the package is
+  installed, `pc` is the same command — but do not assume it is. If something is
+  refused, find the command that does the same job — do not fall back to `python -c`, `sqlite3`,
+  or reading the database by hand. The boundary exists because the database is a
+  build artifact, not because the information is secret. If `pc` genuinely cannot
+  answer something you need, say so in your report; that is a gap worth fixing,
+  and reaching around it hides the gap.
 - You edit `content/*.yaml`. You never write `data/bot.db`.
 - You never make the runtime call a model. `refuse` is a valid answer.
 - Every behaviour change comes with a test. No exceptions.
@@ -17,14 +29,28 @@ You have no special API. Your tools are the repo, the `pc` CLI, and git.
 
 ---
 
+There is no `src/` directory. The Python package is `personal_chatbots/`, and you
+cannot edit it — if a fix needs a code change, say so and stop.
+
+Run every command as `python -m personal_chatbots <command>`. That form works with
+no install step; `pc <command>` is the same thing once the package is installed.
+
+### One command per tool call
+
+Run **one** command per call. Do not chain with `;`, `&&` or `|`, do not use
+`for` loops, and do not use `echo` to print separators — write your commentary as
+text in your reply instead. Command composition is what the permission rules
+cannot see through, so a chained command gets refused even when every part of it
+is allowed. Six test rounds all stalled here before this paragraph existed.
+
 ## 1. Read the inbox
 
 ```bash
-pc inbox          # unanswered questions, clustered by question shape
-pc stats          # kappa, refusal rate, dead rows
+python -m personal_chatbots inbox          # unanswered questions, clustered by question shape
+python -m personal_chatbots stats          # kappa, refusal rate, dead rows
 ```
 
-`pc inbox` reads the `v_unresolved_inbox` view: real questions, grouped by
+`python -m personal_chatbots inbox` reads the `v_unresolved_inbox` view: real questions, grouped by
 normalised shape, most-asked first. Look for:
 
 - **clusters** — the same shape asked 3+ times is worth answering;
@@ -35,8 +61,8 @@ normalised shape, most-asked first. Look for:
 Then check the other two failure directions:
 
 ```bash
-pc stats | grep dead      # rows that never fire (too strict)
-pc test                   # rows that fire on the wrong questions (too broad)
+python -m personal_chatbots stats | grep dead      # rows that never fire (too strict)
+python -m personal_chatbots test                   # rows that fire on the wrong questions (too broad)
 ```
 
 ---
@@ -45,8 +71,13 @@ pc test                   # rows that fire on the wrong questions (too broad)
 
 - `content/knowledge.yaml` — what the bot says today
 - `content/curation.yaml` — entities, groupings, overrides
-- the built entities and documents: `pc ask "..."` is the easiest way to see
-  what the runtime actually sees
+- the vocabulary: `python -m personal_chatbots entities --summary`, then `python -m personal_chatbots entities <type> <needle>`.
+  With no needle, `python -m personal_chatbots entities <type>` lists the whole type (up to 200).
+  A slot only resolves to a **live** entity of the declared type, so if
+  `{language}` never resolves, check that a `language` entity exists before you
+  touch the pattern.
+- the rows themselves: `python -m personal_chatbots knowledge` shows every pattern and its hit count
+- `python -m personal_chatbots ask "..."` is the easiest way to see exactly what the runtime sees
 - `content/tests.yaml` — what must stay true
 
 You may not read the internet. If the answer is not in the repo or the built
@@ -110,9 +141,9 @@ Assertions stay coarse. Never assert an exact answer string.
 ## 5. Verify
 
 ```bash
-pc build          # ingest + content -> data/bot.db
-pc test           # must be green
-pc ask "do you have anything for editing videos?"   # sanity check by hand
+python -m personal_chatbots build          # ingest + content -> data/bot.db
+python -m personal_chatbots test           # must be green
+python -m personal_chatbots ask "do you have anything for editing videos?"   # sanity check by hand
 ```
 
 The baseline is git: if a test passes on `main` and fails on your branch, that

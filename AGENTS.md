@@ -73,11 +73,18 @@ pc test                  # run content/tests.yaml against the built db
 pc stats                 # kappa, refusal rate, dead knowledge rows
 pc sessions              # list chat sessions (one per visitor conversation)
 pc sessions <id>         # replay one transcript
+pc entities --summary    # what kinds of thing exist, and how many
+pc entities repo kotlin  # search the vocabulary by name, alias or attribute
+pc knowledge --grep repo # the rows the bot answers from, and their patterns
 pc serve                 # FastAPI + the chatroom UI
 ```
 
 `pc` is the console script from `pyproject.toml`. Without installing, the same
 commands are `python -m personal_chatbots <command>`.
+
+`sqlite3` is deliberately **not** on your allow-list. Use `pc entities` and
+`pc knowledge` to inspect; `data/bot.db` is a build artifact and reading it by
+hand invites editing it by hand.
 
 Add `--offline --cache tests/fixtures` to `build` to work from the committed API
 snapshot instead of the network. That is what CI does, and it is the fastest way

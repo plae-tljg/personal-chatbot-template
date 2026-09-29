@@ -382,6 +382,50 @@ class Store:
             origin=row["origin"] or "",
         )
 
+    def all_links(self) -> list[tuple[str, str, str]]:
+        """Every link as (from_key, link_type, to_key), for the static export."""
+        return [
+            (r["from_key"], r["link_type"], r["to_key"])
+            for r in self.conn.execute(
+                "SELECT f.key AS from_key, l.link_type, t.key AS to_key FROM entity_links l"
+                " JOIN entities f ON f.id = l.from_entity_id"
+                " JOIN entities t ON t.id = l.to_entity_id"
+                " ORDER BY l.id"
+            )
+        ]
+
+    def entity_summary(self) -> list[sqlite3.Row]:
+        """What kinds of thing exist, and how many of each are live."""
+        return list(
+            self.conn.execute(
+                "SELECT entity_type, COUNT(*) AS live,"
+                " SUM(CASE WHEN status = 'archived' THEN 1 ELSE 0 END) AS archived"
+                " FROM entities GROUP BY entity_type ORDER BY live DESC"
+            )
+        )
+
+    def find_entities(self, needle: str = "", entity_type: str = "", limit: int = 40) -> list[Entity]:
+        """Search the vocabulary by name, key, alias or attribute value.
+
+        Exists so an agent can answer "does a `kotlin` language entity exist?"
+        and "what topics are there?" without opening the database directly --
+        the maintainer's permissions allow `pc`, not `sqlite3`.
+        """
+        sql = "SELECT * FROM entities WHERE status = 'live'"
+        args: list[Any] = []
+        if entity_type:
+            sql += " AND entity_type = ?"
+            args.append(entity_type)
+        if needle:
+            sql += (
+                " AND (name LIKE ? OR key LIKE ? OR aliases_json LIKE ?"
+                " OR summary LIKE ? OR attrs_json LIKE ?)"
+            )
+            args.extend([f"%{needle}%"] * 5)
+        sql += " ORDER BY entity_type, name LIMIT ?"
+        args.append(limit)
+        return [self._entity(r) for r in self.conn.execute(sql, args)]
+
     def entity_by_key(self, key: str) -> Entity | None:
         row = self.conn.execute(
             "SELECT * FROM entities WHERE key = ? AND status = 'live' ORDER BY id LIMIT 1", (key,)
@@ -435,6 +479,21 @@ class Store:
         # Most specific first: rows with slots beat rows without, then YAML order.
         out.sort(key=lambda k: (-len(k.slots), k.id))
         return out
+
+    def all_documents(self) -> list[tuple[Document, str]]:
+        """Every document with its entity key, for the static export."""
+        rows = self.conn.execute(
+            "SELECT d.*, e.key AS entity_key FROM documents d"
+            " LEFT JOIN entities e ON e.id = d.entity_id ORDER BY d.id"
+        ).fetchall()
+        return [
+            (
+                Document(id=int(r["id"]), slug=r["slug"], title=r["title"],
+                         body=r["body"], entity_id=r["entity_id"]),
+                r["entity_key"] or "",
+            )
+            for r in rows
+        ]
 
     def documents_for_entity(self, entity_id: int) -> list[Document]:
         return [

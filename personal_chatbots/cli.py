@@ -21,7 +21,7 @@ from .config import Config, ConfigError
 from .content import ContentError
 from .engine import Runtime
 from .runner import run_tests
-from .store import SchemaTooOld, Store
+from .store import SCHEMA_VERSION, SchemaTooOld, Store
 from .vocabulary import VocabularyError
 
 
@@ -149,6 +149,149 @@ def cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_entities(args: argparse.Namespace) -> int:
+    """Look at the vocabulary without opening the database.
+
+    Without this, an agent asked to check whether a slot resolves has to either
+    guess or reach for sqlite3 -- and sqlite3 is not on its allow-list precisely
+    because the build artifact is not the thing anyone should be writing to.
+    """
+    cfg = _prepare(args)
+    with Store(cfg.db_path) as store:
+        store.require_schema()
+        if args.summary:
+            print("live entities by type:\n")
+            for row in store.entity_summary():
+                archived = row["archived"] or 0
+                extra = f"  ({archived} archived)" if archived else ""
+                print(f"  {row['entity_type']:<10} {row['live']:>4}{extra}")
+            print("\n  pc entities <type> [needle]   list them")
+            return 0
+
+        entity_type = args.entity_type or ""
+        found = store.find_entities(args.needle or "", entity_type, args.limit)
+        if not found:
+            print(f"  no live entity matches type={entity_type or '*'} needle={args.needle or '*'!r}")
+            print("  check the spelling with: pc entities --summary")
+            return 1
+        for entity in found:
+            metrics = ""
+            if entity.attrs:
+                interesting = [
+                    f"{k}={v}" for k, v in entity.attrs.items()
+                    if k in ("stars", "language", "price", "stock", "pushed_at")
+                ]
+                metrics = "  " + " ".join(interesting) if interesting else ""
+            print(f"  {entity.entity_type:<9} {entity.key:<44} {entity.name}{metrics}")
+            if args.verbose and entity.aliases:
+                print(f"            aliases: {', '.join(entity.aliases)}")
+    return 0
+
+
+def cmd_knowledge(args: argparse.Namespace) -> int:
+    """The rows the bot answers from, with their patterns and hit counts."""
+    cfg = _prepare(args)
+    with Store(cfg.db_path) as store:
+        store.require_schema()
+        hits = {row["slug"]: row["hits"] for row in store.knowledge_coverage()}
+        for row in store.knowledge_rows():
+            if args.grep and args.grep.lower() not in row.slug.lower() \
+                    and not any(args.grep.lower() in p.lower() for p in row.patterns):
+                continue
+            matched = hits.get(row.slug) or 0
+            print(f"  {row.slug:<20} [{row.action.get('kind', '?'):<7}] {matched:>3} hits")
+            for pattern in row.patterns:
+                print(f"      {pattern}")
+            slots = ", ".join(f"{{{k}}}:{v}" for k, v in row.slots.items()) or "-"
+            print(f"      slots: {slots}")
+        print("\n  'resolves' needs a live entity of that type -- check with `pc entities`")
+    return 0
+
+
+def cmd_export(args: argparse.Namespace) -> int:
+    """Write a static snapshot the browser engine can answer from.
+
+    This is what makes "mostly static webpage" work: the ladder is a small
+    interpreter over rows, so the rows can ship as JSON and the whole bot runs
+    client-side with no server, no request-time model, and no hosting cost. The
+    only thing that needs a machine is the maintenance round, and that is git.
+    """
+    import datetime
+    import json as _json
+
+    cfg = _prepare(args)
+    with Store(cfg.db_path) as store:
+        store.require_schema()
+        documents = [
+            {
+                "slug": doc.slug,
+                "title": doc.title,
+                "body": doc.body,
+                "entity_key": entity_key,
+            }
+            for doc, entity_key in store.all_documents()
+        ]
+        payload = {
+            "schema_version": SCHEMA_VERSION,
+            "generated_at": datetime.datetime.now().isoformat(timespec="seconds"),
+            "bot": {
+                "name": cfg.name,
+                "tagline": cfg.data.get("tagline", ""),
+                "default_locale": cfg.default_locale,
+                "refuse_template": cfg.refuse_template,
+                "refuse_template_zh": cfg.data.get("refuse_template_zh", ""),
+                "ladder": cfg.ladder,
+                "level": cfg.level,
+                "max_citations": cfg.max_citations,
+            },
+            # already in match order (most specific first), so the JS engine does
+            # not have to re-derive the ordering rule and cannot drift from it
+            "knowledge": [
+                {
+                    "slug": row.slug,
+                    "locale": row.locale,
+                    "patterns": row.patterns,
+                    "slots": row.slots,
+                    "match": row.match,
+                    "action": row.action,
+                    "citations": row.citations,
+                }
+                for row in store.knowledge_rows()
+            ],
+            "entities": [
+                {
+                    "key": e.key,
+                    "type": e.entity_type,
+                    "name": e.name,
+                    "summary": e.summary,
+                    "aliases": e.aliases,
+                    "attrs": e.attrs,
+                    "url": e.url,
+                }
+                for e in store.entities()
+            ],
+            "links": [
+                {"from": from_key, "type": link_type, "to": to_key}
+                for from_key, link_type, to_key in store.all_links()
+            ],
+            "documents": documents,
+            # shipped so the static page can run its own self-check in the browser
+            "tests": content_mod.load_test_cases(cfg.content_dir / "tests.yaml"),
+        }
+
+        target = Path(args.out) if args.out else (cfg.root / "web" / "data.json")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(_json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
+
+    size = target.stat().st_size
+    print(f"exported {target.relative_to(cfg.root)}  ({size / 1024:.0f} KB)")
+    print(f"  {len(payload['knowledge'])} knowledge rows, {len(payload['entities'])} entities, "
+          f"{len(payload['links'])} links, {len(documents)} documents, "
+          f"{len(payload['tests'])} cases")
+    print("  serve it with any static host: the ladder runs in the browser, 0 tokens")
+    return 0
+
+
 def cmd_sessions(args: argparse.Namespace) -> int:
     cfg = _prepare(args)
     with Store(cfg.db_path) as store:
@@ -247,6 +390,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("stats", help="kappa, refusal rate, dead rows")
     p.set_defaults(func=cmd_stats)
+
+    p = sub.add_parser("export", help="write web/data.json for the static browser engine")
+    p.add_argument("--out", default=None, help="target path (default: web/data.json)")
+    p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("entities", help="inspect the vocabulary (no database access needed)")
+    p.add_argument("entity_type", nargs="?", default="", help="repo, account, language, topic, project, person")
+    p.add_argument("needle", nargs="?", default="", help="substring to search names, aliases and attrs")
+    p.add_argument("--summary", "-s", action="store_true", help="counts per type")
+    p.add_argument("--limit", type=int, default=200, help="default 200: enough to see a whole type")
+    p.add_argument("--verbose", "-v", action="store_true", help="show aliases")
+    p.set_defaults(func=cmd_entities)
+
+    p = sub.add_parser("knowledge", help="the rows the bot answers from")
+    p.add_argument("--grep", default="")
+    p.set_defaults(func=cmd_knowledge)
 
     p = sub.add_parser("sessions", help="list chat sessions, or show one transcript")
     p.add_argument("session_id", nargs="?", default=None)
