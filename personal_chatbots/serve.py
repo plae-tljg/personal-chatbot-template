@@ -64,6 +64,10 @@ def _serialize(answer: Answer) -> dict[str, Any]:
         # Surfaced because a rewrite the visitor cannot see is indistinguishable
         # from a guess.
         "refs": answer.refs,
+        # Whether the *tables* could answer, which is not the same as whether the
+        # visitor got a reply. The widget used to infer this from source ==
+        # "refuse", which is wrong for a fallback answer.
+        "unresolved": answer.unresolved,
         # Follow-up questions this bot can actually answer, so a refusal always
         # comes with a way forward.
         "suggestions": answer.suggestions,

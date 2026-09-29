@@ -277,9 +277,19 @@ def ingest_sources(cfg: Config, *, offline: bool = False, cache_dir: Path | None
                 put(topic_entity(topic, origin))
             repos_for_readme.append((spec, origin))
 
-    # READMEs, newest and most-starred first, capped by config.
+    # READMEs, most-starred first. A limit of 0 means all of them, which is only
+    # sane with a token: unauthenticated, 60 requests/hour is already spent by
+    # the account and repository listings.
     repos_for_readme.sort(key=lambda pair: pair[0].attrs.get("stars", 0), reverse=True)
-    for spec, origin in repos_for_readme[: cfg.readme_limit]:
+    limit = cfg.readme_limit
+    selected = repos_for_readme if limit <= 0 else repos_for_readme[:limit]
+    if limit and len(repos_for_readme) > limit:
+        result.notes.append(
+            f"fetched READMEs for {limit} of {len(repos_for_readme)} repositories "
+            f"(unauthenticated rate limit). Set GITHUB_TOKEN and rebuild to get all "
+            f"of them -- questions needing README text currently only work for those {limit}."
+        )
+    for spec, origin in selected:
         owner, _, name = spec.key.partition("/")
         body = _get_text(
             f"{API}/repos/{owner}/{name}/readme",

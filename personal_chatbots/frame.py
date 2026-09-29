@@ -82,7 +82,16 @@ class Frame:
         frame = cls()
         blocked_subject = False
 
-        answers = [row for row in rows if row["role"] == "assistant"]
+        # A model answer is excluded, and this is not tidiness. Its citations are
+        # the *context* it was given, not a list the visitor was shown -- so
+        # reading them as `items` makes "the second one" resolve to an entity
+        # nobody saw. Verified: after a fallback answer citing five entities,
+        # "tell me about the second one" answered about Python, which had never
+        # appeared on screen.
+        answers = [
+            row for row in rows
+            if row["role"] == "assistant" and (row["resolution_source"] or "") != "fallback"
+        ]
         for row in reversed(answers[-window:] if window else answers):
             keys = [
                 str(citation.get("key", ""))

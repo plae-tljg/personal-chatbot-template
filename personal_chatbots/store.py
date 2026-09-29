@@ -398,6 +398,16 @@ class Store:
             )
         ]
 
+    def document_coverage(self) -> tuple[int, int]:
+        """(repositories with fetched text, live repositories)."""
+        covered = int(self.conn.execute(
+            "SELECT COUNT(DISTINCT entity_id) AS n FROM documents WHERE entity_id IS NOT NULL"
+        ).fetchone()["n"])
+        total = int(self.conn.execute(
+            "SELECT COUNT(*) AS n FROM entities WHERE entity_type = 'repo' AND status = 'live'"
+        ).fetchone()["n"])
+        return covered, total
+
     def entity_summary(self) -> list[sqlite3.Row]:
         """What kinds of thing exist, and how many of each are live."""
         return list(

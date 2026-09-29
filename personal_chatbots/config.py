@@ -122,14 +122,22 @@ class Config:
 
     @property
     def readme_limit(self) -> int:
-        """How many READMEs to fetch.
+        """How many READMEs to fetch. 0 means all of them.
 
         The unauthenticated GitHub API allows 60 requests/hour. Four accounts
-        plus their repositories is ~46, which leaves room for about ten READMEs.
-        Descriptions are the better summary anyway; READMEs are for the search
-        rung.
+        plus their repositories is ~46 requests, which leaves room for about ten
+        READMEs -- so ten is the default and the other 32 repositories have no
+        searchable text at all.
+
+        With GITHUB_TOKEN the limit is 5000/hour and the cap is pointless, so it
+        lifts automatically rather than waiting for someone to edit config.
         """
-        return int(self.data.get("build", {}).get("readme_limit", 10))
+        configured = self.data.get("build", {}).get("readme_limit")
+        if configured is not None and str(configured) != "auto":
+            return int(configured)
+        import os
+
+        return 0 if os.environ.get("GITHUB_TOKEN") else 10
 
     # -- paths -----------------------------------------------------------------
 

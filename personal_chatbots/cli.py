@@ -234,10 +234,28 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         print(f"  never matched    {len(never)}: {', '.join(never[:6])}"
               + (" …" if len(never) > 6 else ""))
 
+    with Store(cfg.db_path) as store:
+        documents, repo_count = store.document_coverage()
+    print("\ndocuments")
+    print(f"  readmes          {documents} of {repo_count} repositories")
+    if documents < repo_count:
+        print(f"                   the other {repo_count - documents} have no searchable text,")
+        print("                   so questions needing their README will refuse.")
+        print("                   set GITHUB_TOKEN and rebuild to fetch all of them")
+
     print("\ntraffic")
     print(f"  messages         {stats['messages']}")
     kappa = "n/a" if stats["kappa"] is None else f"{stats['kappa'] * 100:.0f}%"
     print(f"  kappa            {kappa}  ({stats['answered']} answered, {stats['refused']} refused)")
+    with Store(cfg.db_path) as store:
+        mix = {row["resolution_source"]: row["turns"] for row in store.resolution_mix()}
+    total_turns = sum(mix.values()) or 1
+    model_calls = mix.get("fallback", 0)
+    print(f"  model calls      {model_calls} of {total_turns} turns"
+          f"  ({model_calls / total_turns * 100:.0f}% went to the model)")
+    if model_calls and model_calls / total_turns > 0.2:
+        print("                   that is high. each one is ~2-7 s and a token spend;")
+        print("                   the inbox below is what would remove them")
     print(f"  inbox            {len(inbox)} unanswered shape(s)")
     for row in inbox[:5]:
         print(f"    x{row['same_shape_count']:<3} {row['content'][:60]}")

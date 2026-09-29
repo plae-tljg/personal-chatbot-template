@@ -186,7 +186,11 @@ const PHRASES = (() => {
 /** Build a frame from the previous answers. `turns` are {citations:[{key}]}. */
 export function frameFrom(turns, index, window = 6) {
   const frame = { subject: null, items: [] };
-  const answers = turns.filter((t) => t.role === "assistant").slice(-window);
+  // A model answer is excluded: its citations are the context it was given, not
+  // a list the visitor was shown. Must match frame.py.
+  const answers = turns
+    .filter((t) => t.role === "assistant" && t.source !== "fallback")
+    .slice(-window);
   let blocked = false;
   for (const row of [...answers].reverse()) {
     const keys = (row.citations || []).map((c) => c.key).filter(Boolean);

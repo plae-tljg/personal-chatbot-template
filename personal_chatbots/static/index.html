@@ -189,7 +189,7 @@ function refs(list) {
 function turnEl(question, answer, opts) {
   const box = document.createElement('div');
   box.className = 'turn';
-  const refused = answer.unresolved || answer.source === 'refuse';
+  const refused = answer.unresolved ?? (answer.source === 'refuse');
   const cites = citations(answer.citations, opts && opts.live ? CONFIG.max_citations : 0);
   const readAs = refs(answer.refs);
   box.innerHTML =
@@ -203,11 +203,13 @@ function turnEl(question, answer, opts) {
            : 'from tables'}</span>` +
       (answer.source ? `<span class="badge">${esc(answer.source)}${answer.matched ? ':' + esc(answer.matched) : ''}</span>` : '') +
       (answer.latency_ms != null ? `<span class="badge">${answer.latency_ms} ms</span>` : '') +
-      (opts && opts.live ? `<span class="badge">0 tokens</span>` : '') +
+      (opts && opts.live
+        ? `<span class="badge">${answer.source === 'fallback' ? 'model call' : '0 tokens'}</span>`
+        : '') +
       (cites ? `<span>${cites}</span>` : '') +
     `</div>` +
-    (r.fallback_error && refused
-      ? `<div class="meta"><span class="badge refuse">model rung failed — ${esc(r.fallback_error.slice(0, 90))}</span></div>`
+    (answer.fallback_error && refused
+      ? `<div class="meta"><span class="badge refuse">model rung failed — ${esc(String(answer.fallback_error).slice(0, 90))}</span></div>`
       : '') +
     suggestions(answer.suggestions, question);
   return box;
@@ -347,11 +349,7 @@ async function submit(question) {
       SESSION = r.session_id;
       location.hash = '#/s/' + encodeURIComponent(SESSION);
     }
-    pending.replaceWith(turnEl(question, {
-      text: r.text, source: r.source, matched: r.matched,
-      citations: r.citations, refs: r.refs, unresolved: r.source === 'refuse',
-      latency_ms: r.latency_ms
-    }, { live: true }));
+    pending.replaceWith(turnEl(question, r, { live: true }));
     el('title').textContent = question.length > 60 ? question.slice(0, 60) + '…' : question;
     scrollDown();
     loadSessions();

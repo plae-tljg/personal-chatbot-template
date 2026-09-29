@@ -48,6 +48,8 @@
       "github:ellkaimu",
       "github:plae-lkm"
     ],
-    "readme_bytes": 8000
+    "readme_bytes": 8000,
+    "readme_limit": "auto",
+    "_readme_note": "auto = 10 READMEs without a token (the unauthenticated API allows 60 requests/hour and the four account listings already use ~46), or all of them with GITHUB_TOKEN. Repositories whose README was not fetched have no searchable text, so questions needing it will refuse. `pc doctor` reports the shortfall."
   }
 }

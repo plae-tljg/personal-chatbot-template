@@ -151,3 +151,38 @@ class ScenarioTest(BuiltCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FramePurityTest(BuiltCase):
+    """Only answers the visitor could point at may feed the frame.
+
+    A fallback answer carries the entities it was given as context. Reading those
+    as a displayed list made "the second one" resolve to an entity that was never
+    on screen -- a confident answer about something nobody had mentioned.
+    """
+
+    def test_a_model_answer_does_not_become_a_list(self):
+        from personal_chatbots.frame import Frame
+        from personal_chatbots.store import Citation
+
+        # stand in for a model turn: several citations, source="fallback"
+        self.store.record_turn(
+            session_id="pure", question="tell me about things",
+            normalized="tell me about things", answer="Here is what I know.",
+            source="fallback", matched_slug="model",
+            citations=[
+                Citation(key="language:python", label="Python", url=""),
+                Citation(key="language:kotlin", label="Kotlin", url=""),
+            ],
+            unresolved=True, latency_ms=10.0,
+        )
+        frame = Frame.from_transcript(self.store.session_messages("pure"), self.store)
+        self.assertEqual(frame.items, [], "a model answer is not a list the visitor saw")
+        self.assertIsNone(frame.subject)
+
+    def test_a_table_list_still_becomes_one(self):
+        self.runtime.ask_and_record("what projects does LKM have?", session_id="pure2")
+        from personal_chatbots.frame import Frame
+
+        frame = Frame.from_transcript(self.store.session_messages("pure2"), self.store)
+        self.assertTrue(frame.items, "a real list must still be referable")
