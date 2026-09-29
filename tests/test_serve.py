@@ -8,7 +8,11 @@ try:
     from fastapi.testclient import TestClient
 
     HAVE_FASTAPI = True
-except ImportError:  # pragma: no cover
+except Exception:  # noqa: BLE001  # pragma: no cover
+    # Deliberately broad. fastapi.testclient needs httpx and raises RuntimeError,
+    # not ImportError, when it is missing -- so an ImportError guard lets the
+    # module fail to import and takes the whole discovery run down with it. That
+    # is exactly what happened on a fresh clone, and in CI.
     HAVE_FASTAPI = False
 
 from tests.support import FIXTURE_CACHE, ROOT, BuiltCase

@@ -24,8 +24,12 @@ dependencies = [
   "PyYAML>=6.0",
 ]
 
-# No dev extra on purpose: the tests are stdlib unittest, so a contributor needs
-# nothing beyond the three runtime dependencies.
+# The tests are stdlib unittest, so nothing is needed to *run* them -- except the
+# two modules that drive the HTTP API. fastapi.testclient imports httpx, and
+# raises RuntimeError (not ImportError) when it is missing, which is why the
+# guards in those modules catch broadly.
+[project.optional-dependencies]
+test = ["httpx>=0.27"]
 
 [project.scripts]
 pc = "personal_chatbots.cli:main"

@@ -16,7 +16,7 @@ git clone <this repo> personal-chatbots && cd personal-chatbots
 
 python3 -m venv .venv && source .venv/bin/activate
 pip install -U pip setuptools        # see the note below if you skip this
-pip install -e .
+pip install -e ".[test]"
 
 # 1. build the database. Needs no network: it uses the committed API snapshot.
 python -m personal_chatbots build --offline --cache tests/fixtures
@@ -37,7 +37,7 @@ python -m unittest discover -s tests -t .  # 102 unit + invariant tests
 python -m personal_chatbots serve          # http://127.0.0.1:8080
 ```
 
-With `pip install -e .`, every command above is also available as plain `pc`:
+With `pip install -e ".[test]"`, every command above is also available as plain `pc`:
 
 ```bash
 pc build --offline --cache tests/fixtures
@@ -45,7 +45,7 @@ pc ask "which projects use Kotlin?"
 pc serve
 ```
 
-**If `pip install -e .` fails** with *"its build backend is missing the
+**If `pip install -e ".[test]"` fails** with *"its build backend is missing the
 'build_editable' hook"*, your setuptools is older than 64 — Debian and Ubuntu
 ship 59. Either `pip install -U setuptools`, or skip the install entirely:
 

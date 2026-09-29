@@ -35,7 +35,7 @@ jobs:
           node-version: "22"
 
       - name: install
-        run: pip install -e .
+        run: pip install -e ".[test]"
 
       # The site is only worth publishing if it answers the way the tested
       # runtime does, so the gate runs before the artifact is built.
