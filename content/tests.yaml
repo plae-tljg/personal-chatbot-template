@@ -1,0 +1,60 @@
+# content/tests.yaml
+#
+# 测试集。这是"后续改动不会杀死过去改进"的机制。
+#
+# 维护者编辑知识行的同一个回合里，必须给这次改动加一条用例（见 AGENTS.md）。
+# 基线由 git 提供：main 上全绿，分支上变红 = 回归。
+# 所以不需要 test_results 表 —— git 就是那张表。
+#
+# 断言刻意做粗：answer_contains 是子串，不是精确答案。
+# 一个改个措辞就报警的测试集，人很快就会学会忽略它；那比没有更糟。
+
+# ---- 正例：必须答出来，而且必须解析到正确的实体（防"过严"） ----
+- slug: repo.about.dsh-review
+  question: "what is dsh-review about?"
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-tljg/dsh-review" }
+    answer_contains: ["DeepSeek Harness"]
+    cites: ["plae-tljg/dsh-review"]
+
+- slug: repo.about.mixed-naming
+  question: "tell me about Finance-Management-App"
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-tljg/Finance-Management-App" }
+
+- slug: repo.by_language.kotlin
+  question: "which projects use Kotlin?"
+  expect:
+    source: knowledge
+    answer_contains: ["MaaFwPhoneAI"]
+
+- slug: repo.ranked.stars
+  question: "what is your most starred repo?"
+  expect:
+    source: knowledge
+    answer_contains: ["Finance-Management-App"]
+
+# ---- 易混负例：长得像但必须不命中（防"过松"，抢别人的问题） ----
+- slug: confusable.price-not-a-repo-question
+  question: "what is the price of dsh-review?"
+  expect:
+    refuses: true
+
+- slug: confusable.wedding-vs-project
+  question: "do you do weddings?"
+  expect:
+    refuses: true
+
+# ---- 拒答例：真的不知道就必须说不知道（防编造） ----
+- slug: refuse.salary
+  question: "how much does LKM charge per hour?"
+  expect:
+    refuses: true
+
+# ---- 槽位歧义：两个仓库名字太像，必须拒绝猜，而不是挑一个（防瞎猜） ----
+- slug: ambiguity.finance-app-vs-web
+  question: "what is Finance-Management about?"
+  expect:
+    refuses: true

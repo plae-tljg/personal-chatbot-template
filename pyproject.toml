@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personal-chatbots"
+version = "0.1.0"
+description = "A chatbot that answers from tables, maintained by a coding agent through pull requests"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn>=0.27",
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+pc = "personal_chatbots.cli:main"
+
+[tool.setuptools]
+packages = ["personal_chatbots"]
+
+[tool.setuptools.package-data]
+personal_chatbots = ["static/*"]

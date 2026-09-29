@@ -1,0 +1,25 @@
+# build artifacts -- the database is reproducible from content/ + ingest
+data/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# secrets and local overrides
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# working notes and scratch
+.notes/
+.scratch/
+*.local.md

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ask LKM</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel-2: #1d2129; --line: #262b36;
+    --text: #e7e9ee; --dim: #8b93a5; --faint: #5d6577;
+    --accent: #7aa2f7; --ok: #9ece6a; --refuse: #e0af68; --bad: #f7768e;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.62 system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; overflow: hidden;
+  }
+
+  /* ---------- sidebar ---------- */
+  aside {
+    width: 268px; flex: 0 0 268px; background: #12151b; border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  .brand { padding: 16px 16px 10px; }
+  .brand b { font-size: 15px; letter-spacing: -0.01em; }
+  .brand span { display: block; color: var(--faint); font-size: 11.5px; margin-top: 2px; }
+  .new {
+    margin: 6px 12px 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    font: inherit; font-size: 13.5px; text-align: left; display: flex; gap: 8px;
+  }
+  .new:hover { border-color: var(--accent); }
+  .list { flex: 1; overflow-y: auto; padding: 0 8px 12px; }
+  .item {
+    padding: 8px 10px; border-radius: 8px; cursor: pointer; margin-bottom: 2px;
+    display: flex; gap: 8px; align-items: baseline;
+  }
+  .item:hover { background: var(--panel); }
+  .item.on { background: var(--panel-2); }
+  .item .t { flex: 1; font-size: 13.5px; white-space: nowrap; overflow: hidden;
+             text-overflow: ellipsis; }
+  .item .m { font-family: var(--mono); font-size: 10.5px; color: var(--faint); white-space: nowrap; }
+  .item .x { opacity: 0; color: var(--faint); font-size: 15px; line-height: 1; padding: 0 2px; }
+  .item:hover .x { opacity: 1; }
+  .item .x:hover { color: var(--bad); }
+  .side-note { padding: 10px 14px; border-top: 1px solid var(--line);
+               font-family: var(--mono); font-size: 10.5px; color: var(--faint); line-height: 1.7; }
+
+  /* ---------- main ---------- */
+  main { flex: 1; display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+  header {
+    padding: 14px 22px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  header h1 { margin: 0; font-size: 15px; font-weight: 600;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; }
+  header .lvl { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+  .meters { margin-left: auto; display: flex; gap: 14px; font-family: var(--mono);
+            font-size: 11px; color: var(--dim); }
+  .meters b { color: var(--ok); font-weight: 500; }
+
+  #log { flex: 1; overflow-y: auto; padding: 22px 22px 8px; }
+  .inner { max-width: 760px; margin: 0 auto; }
+  .turn { margin: 0 0 22px; }
+  .q { font-weight: 500; margin-bottom: 9px; white-space: pre-wrap; }
+  .q::before { content: "› "; color: var(--accent); }
+  .a { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+       padding: 13px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .a.refuse { border-color: #4a3a1e; color: #d8c9a8; }
+  .meta { margin-top: 9px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .badge { padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line);
+           color: var(--dim); font-family: var(--mono); font-size: 11px; }
+  .badge.ok { color: var(--ok); border-color: #2f4a24; }
+  .badge.refuse { color: var(--refuse); border-color: #4a3a1e; }
+  .badge.ref { color: var(--accent); border-color: #2b3a5c; }
+  .cite { color: var(--accent); text-decoration: none; font-size: 12.5px;
+          font-family: var(--mono); }
+  .cite:hover { text-decoration: underline; }
+
+  .empty { max-width: 760px; margin: 40px auto; color: var(--dim); }
+  .empty h2 { font-size: 17px; color: var(--text); margin: 0 0 6px; font-weight: 600; }
+  .empty p { margin: 0 0 18px; font-size: 13.5px; }
+  .empty .s { display: block; padding: 7px 0; cursor: pointer; font-size: 14px;
+              border-bottom: 1px solid var(--line); }
+  .empty .s:hover { color: var(--accent); }
+
+  form { padding: 12px 22px 18px; }
+  .field { max-width: 760px; margin: 0 auto; display: flex; gap: 10px;
+           background: var(--panel); border: 1px solid var(--line);
+           border-radius: 12px; padding: 8px 8px 8px 14px; }
+  .field:focus-within { border-color: var(--accent); }
+  input[type=text] { flex: 1; background: none; border: 0; color: var(--text);
+                     font: inherit; outline: none; padding: 6px 0; }
+  button.go { background: var(--accent); color: #0f1115; border: 0; border-radius: 8px;
+              padding: 8px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.go:disabled { opacity: .45; cursor: default; }
+  .hint { max-width: 760px; margin: 8px auto 0; font-family: var(--mono);
+          font-size: 10.5px; color: var(--faint); }
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand">
+    <b id="brand-name">Ask LKM</b>
+    <span id="brand-tag">answers from tables, not from a model</span>
+  </div>
+  <button class="new" id="new">＋&nbsp; New chat</button>
+  <div class="list" id="list"></div>
+  <div class="side-note" id="side-note"></div>
+</aside>
+
+<main>
+  <header>
+    <h1 id="title">New chat</h1>
+    <span class="lvl" id="lvl"></span>
+    <div class="meters" id="meters"></div>
+  </header>
+  <div id="log"><div class="inner" id="inner"></div></div>
+  <form id="form" autocomplete="off">
+    <div class="field">
+      <input type="text" id="q" placeholder="ask about the work…" maxlength="500" />
+      <button class="go" id="send" type="submit">Ask</button>
+    </div>
+    <div class="hint" id="hint"></div>
+  </form>
+</main>
+
+<script>
+const el = id => document.getElementById(id);
+const listEl = el('list'), inner = el('inner'), logEl = el('log');
+
+let SESSION = null;          // current session id, null until the first answer
+let CONFIG = { ladder: [], level: 1 };
+let sending = false;
+
+const SAMPLES = [
+  "what projects does LKM have?",
+  "what is dsh-review about?",
+  "which projects use Kotlin?",
+  "what have you built with finance?",
+  "what is the Voice Cloning on MUSA project?",
+  "how do i contact LKM?"
+];
+
+const esc = s => String(s == null ? '' : s)
+  .replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function ago(iso) {
+  if (!iso) return '';
+  const then = new Date(iso.replace(' ', 'T') + 'Z').getTime();
+  if (Number.isNaN(then)) return '';
+  const s = Math.max(0, (Date.now() - then) / 1000);
+  if (s < 60) return 'now';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h';
+  return Math.floor(s / 86400) + 'd';
+}
+
+/* ---------- rendering ---------- */
+
+function citations(items, cap) {
+  const all = items || [];
+  const shown = cap ? all.slice(0, cap) : all;
+  const links = shown.map(c => c.url
+    ? `<a class="cite" href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.label || c.key)}</a>`
+    : `<span class="badge">${esc(c.key)}</span>`).join(' ');
+  const rest = all.length - shown.length;
+  return links + (rest > 0 ? ` <span class="badge">+${rest}</span>` : '');
+}
+
+/* A resolved reference, shown rather than hidden: the visitor should be able to
+   see that "the second one" was read as a particular repository. */
+function refs(list) {
+  const entries = Object.entries(list || {});
+  if (!entries.length) return '';
+  return entries.map(([phrase, key]) =>
+    `<span class="badge ref">“${esc(phrase)}” → ${esc(key)}</span>`).join(' ');
+}
+
+function turnEl(question, answer, opts) {
+  const box = document.createElement('div');
+  box.className = 'turn';
+  const refused = answer.unresolved || answer.source === 'refuse';
+  const cites = citations(answer.citations, opts && opts.live ? CONFIG.max_citations : 0);
+  const readAs = refs(answer.refs);
+  box.innerHTML =
+    `<div class="q">${esc(question)}</div>` +
+    `<div class="a${refused ? ' refuse' : ''}">${esc(answer.text)}</div>` +
+    `<div class="meta">` +
+      (readAs ? readAs : '') +
+      `<span class="badge ${refused ? 'refuse' : 'ok'}">` +
+        `${refused ? 'refused — recorded' : 'from tables'}</span>` +
+      (answer.source ? `<span class="badge">${esc(answer.source)}${answer.matched ? ':' + esc(answer.matched) : ''}</span>` : '') +
+      (answer.latency_ms != null ? `<span class="badge">${answer.latency_ms} ms</span>` : '') +
+      (opts && opts.live ? `<span class="badge">0 tokens</span>` : '') +
+      (cites ? `<span>${cites}</span>` : '') +
+    `</div>`;
+  return box;
+}
+
+function renderEmpty() {
+  inner.innerHTML =
+    `<div class="empty"><h2>${esc(CONFIG.name || 'Ask')}</h2>` +
+    `<p>${esc(CONFIG.tagline || '')}</p>` +
+    SAMPLES.map(s => `<span class="s">${esc(s)}</span>`).join('') +
+    `</div>`;
+  inner.querySelectorAll('.s').forEach(node =>
+    node.addEventListener('click', () => submit(node.textContent)));
+}
+
+function renderTranscript(payload) {
+  if (!payload.messages.length) { renderEmpty(); return; }
+  inner.innerHTML = '';
+  let question = null;
+  for (const m of payload.messages) {
+    if (m.role === 'user') { question = m.content; continue; }
+    inner.appendChild(turnEl(question, m, { live: false }));
+    question = null;
+  }
+  scrollDown();
+}
+
+function scrollDown() { logEl.scrollTop = logEl.scrollHeight; }
+
+/* ---------- data ---------- */
+
+async function api(path, options) {
+  const res = await fetch(path, options);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || res.statusText);
+  return body;
+}
+
+async function loadSessions() {
+  try {
+    const { sessions } = await api('/api/sessions');
+    listEl.innerHTML = '';
+    if (!sessions.length) {
+      listEl.innerHTML = `<div class="item"><span class="t" style="color:var(--faint)">no chats yet</span></div>`;
+      return;
+    }
+    for (const s of sessions) {
+      const node = document.createElement('div');
+      node.className = 'item' + (s.id === SESSION ? ' on' : '');
+      node.innerHTML =
+        `<span class="t">${esc(s.title)}</span>` +
+        `<span class="m">${s.turns}${s.unresolved ? ' · ' + s.unresolved + '?' : ''} · ${ago(s.last_at)}</span>` +
+        `<span class="x" title="delete">×</span>`;
+      node.addEventListener('click', ev => {
+        if (ev.target.classList.contains('x')) { removeSession(s.id); return; }
+        openSession(s.id);
+      });
+      listEl.appendChild(node);
+    }
+  } catch (err) {
+    listEl.innerHTML = `<div class="item"><span class="t" style="color:var(--bad)">${esc(err.message)}</span></div>`;
+  }
+}
+
+async function loadStats() {
+  try {
+    const s = await api('/api/stats');
+    const kappa = s.kappa === null ? 'n/a' : Math.round(s.kappa * 100) + '%';
+    el('meters').innerHTML =
+      `<span>knowledge <b>${s.knowledge}</b></span>` +
+      `<span>entities <b>${s.entities}</b></span>` +
+      `<span>from tables <b>${kappa}</b></span>` +
+      `<span>unresolved <b>${s.unresolved}</b></span>`;
+  } catch (e) { /* the meters are decoration */ }
+}
+
+async function openSession(id) {
+  SESSION = id;
+  location.hash = '#/s/' + encodeURIComponent(id);
+  try {
+    const payload = await api('/api/sessions/' + encodeURIComponent(id));
+    el('title').textContent = payload.title;
+    renderTranscript(payload);
+  } catch (err) {
+    newChat();
+    return;
+  }
+  loadSessions();
+}
+
+function newChat() {
+  SESSION = null;
+  location.hash = '';
+  el('title').textContent = 'New chat';
+  renderEmpty();
+  el('q').focus();
+  loadSessions();
+}
+
+async function removeSession(id) {
+  try { await api('/api/sessions/' + encodeURIComponent(id), { method: 'DELETE' }); } catch (e) {}
+  if (id === SESSION) newChat(); else loadSessions();
+}
+
+/* ---------- asking ---------- */
+
+async function submit(question) {
+  question = (question || '').trim();
+  if (!question || sending) return;
+  sending = true; el('send').disabled = true;
+
+  const pending = document.createElement('div');
+  pending.className = 'turn';
+  pending.innerHTML =
+    `<div class="q">${esc(question)}</div>` +
+    `<div class="a" style="color:var(--faint)">…</div>`;
+  if (inner.querySelector('.empty')) inner.innerHTML = '';
+  inner.appendChild(pending);
+  scrollDown();
+
+  try {
+    const r = await api('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, session_id: SESSION })
+    });
+    if (!SESSION) {
+      SESSION = r.session_id;
+      location.hash = '#/s/' + encodeURIComponent(SESSION);
+    }
+    pending.replaceWith(turnEl(question, {
+      text: r.text, source: r.source, matched: r.matched,
+      citations: r.citations, refs: r.refs, unresolved: r.source === 'refuse',
+      latency_ms: r.latency_ms
+    }, { live: true }));
+    el('title').textContent = question.length > 60 ? question.slice(0, 60) + '…' : question;
+    scrollDown();
+    loadSessions();
+    loadStats();
+  } catch (err) {
+    pending.replaceWith(turnEl(question, {
+      text: 'error: ' + err.message, source: 'error', citations: [], unresolved: true
+    }, { live: true }));
+  } finally {
+    sending = false; el('send').disabled = false; el('q').focus();
+  }
+}
+
+el('form').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const value = el('q').value;
+  el('q').value = '';
+  submit(value);
+});
+el('new').addEventListener('click', newChat);
+
+/* ---------- boot ---------- */
+
+(async function boot() {
+  try { CONFIG = await api('/api/config'); } catch (e) {}
+  el('brand-name').textContent = CONFIG.name || 'Ask';
+  document.title = CONFIG.name || 'Ask';
+  if (CONFIG.tagline) el('brand-tag').textContent = CONFIG.tagline;
+  el('lvl').textContent = `level ${CONFIG.level} · ${(CONFIG.ladder || []).join(' → ')}`;
+  el('hint').textContent =
+    `level ${CONFIG.level} — references resolve against earlier turns (“the second one”, “it”). ` +
+    `nothing else is carried across turns.`;
+  el('side-note').innerHTML =
+    `sessions are a view over <b>messages</b><br>` +
+    `runtime: ${(CONFIG.ladder || []).join(' → ')}<br>` +
+    `0 tokens · no model at request time`;
+
+  const match = location.hash.match(/^#\/s\/(.+)$/);
+  if (match) await openSession(decodeURIComponent(match[1]));
+  else { renderEmpty(); loadSessions(); }
+  loadStats();
+
+  const before = () => {};
+  window.addEventListener('hashchange', () => {
+    const m = location.hash.match(/^#\/s\/(.+)$/);
+    const id = m ? decodeURIComponent(m[1]) : null;
+    if (id !== SESSION) { if (id) openSession(id); else newChat(); }
+  });
+})();
+</script>
+</body>
+</html>

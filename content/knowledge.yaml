@@ -1,0 +1,130 @@
+# content/knowledge.yaml
+#
+# 一行 = 一个问句形状 -> 一个确定性动作。这是 bot 全部"会说什么"。
+#
+# 三条规矩：
+#   1. 模板里不能出现具体数值，只能出现 {slot} 和实体的字段（{repo.summary}）。
+#      价格 / 版本 / 库存 / 日期 一律从 entities 解析 —— 这是成本要求。（CONCERNS C2）
+#   2. 一行可以挂多个 patterns。多一个入口不增加一行，也不增加一次 AI 唤醒。
+#   3. 引用哪来？引文自动收集：答案里用了哪个实体的字段，就自动引用它。
+#      cites: 只在需要额外引用（模板没插值到）时才写。
+#
+# 槽位规则：pattern 里出现的 {x} 必须在 slots 里声明，且值必须是合法的 entity_type。
+# 匹配时先解析槽位（必须唯一命中一个 live 实体），再把问句骨架和 pattern 骨架比对。
+# 槽位解析不出来 -> 这一行不命中（不猜）。
+
+- slug: owner.intro
+  patterns:
+    - "who is {person}"
+    - "what does {person} do"
+    - "tell me about {person}"
+  slots: { person: person }
+  action:
+    kind: answer
+    template: "{person} — {person.summary}"
+
+- slug: owner.accounts
+  patterns:
+    - "which accounts does {person} publish under"
+    - "how many github accounts do you have"
+    - "where do you publish"
+  slots: { person: person }
+  action:
+    kind: list
+    entity_type: account
+    link_type: owned_by
+    direction: in            # account --owned_by--> person，从 person 反向找 account
+    template: "{name} — {summary}"
+
+- slug: repo.about
+  patterns:
+    - "what is {repo} about"
+    - "tell me about {repo}"
+    - "what does {repo} do"
+  slots: { repo: repo }
+  action:
+    kind: answer
+    template: "{repo} — {repo.summary}"
+
+- slug: repo.list
+  patterns:
+    - "what projects does {person} have"
+    - "list your work"
+    - "what have you built"
+  slots: { person: person }
+  action:
+    kind: list
+    entity_type: repo
+    order_by: "attrs.stars desc"
+    limit: 10
+    template: "{name} ({attrs.stars}★) — {summary}"
+
+- slug: repo.ranked
+  patterns:
+    - "what is your most starred repo"
+    - "what is your most popular project"
+    - "which repo has the most stars"
+  slots: {}
+  action:
+    kind: list
+    entity_type: repo
+    order_by: "attrs.stars desc"
+    limit: 5
+    template: "{name} ({attrs.stars}★) — {summary}"
+
+- slug: repo.by_language
+  patterns:
+    - "which projects use {language}"
+    - "what have you written in {language}"
+  slots: { language: language }
+  action:
+    kind: list
+    entity_type: repo
+    link_type: uses_language
+    direction: in            # repo --uses_language--> language
+    template: "{name} ({attrs.language}) — {summary}"
+
+- slug: repo.by_topic
+  patterns:
+    - "what have you built with {topic}"
+    - "do you have anything for {topic}"
+    - "do you have anything about {topic}"
+  slots: { topic: topic }
+  action:
+    kind: list
+    entity_type: repo
+    link_type: tagged
+    direction: in            # repo --tagged--> topic
+    template: "{name} — {summary}"
+
+- slug: project.about
+  patterns:
+    - "what is the {project} project"
+    - "what is in {project}"
+  slots: { project: project }
+  action:
+    kind: list
+    entity_type: repo
+    link_type: includes
+    direction: out           # project --includes--> repo
+    template: "{name} — {summary}"
+
+- slug: contact
+  patterns:
+    - "how do i contact {person}"
+    - "how to hire {person}"
+    - "how do i reach you"
+  slots: { person: person }
+  action:
+    kind: answer
+    template: "Open an issue on any repo, or use the links on {person.url}."
+
+- slug: meta.provenance
+  patterns:
+    - "where did you get this"
+    - "how do you know that"
+    - "what is your source"
+  slots: {}
+  action:
+    kind: answer
+    template: "From the public GitHub metadata and READMEs of the repositories listed above."

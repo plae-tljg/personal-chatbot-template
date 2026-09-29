@@ -1,0 +1,73 @@
+# content/curation.yaml
+#
+# 手工实体 + 对 ingest 结果的覆盖。
+#
+# 为什么需要它：ingest 只能给事实，"口吻"和"归类"给不了。
+#   - GitHub profile 的 bio 是 "Plasticity, Elasticity, Torsion." —— 那不是简历语言，
+#     bot 不该照搬。
+#   - 42 个仓库是平的，人看到的是家族（Finance Management = 3 个仓库）。
+#   - GitHub topic 覆盖不全：三个 finance 仓库里只有一个带 finance topic。
+#
+# 这份文件是维护 agent 最该动的地方：它在这里提的是"判断"，不是"搬运"。
+# 它进 git，所以判断也会被 review、被回滚、有历史。
+
+entities:
+  - type: person
+    key: plae-tljg
+    name: LKM
+    summary: "Builds offline-first tools, Android automation, and AI-maintained systems."
+    url: https://github.com/plae-tljg
+    aliases: ["LKM", "lkm", "plaetljg", "plae tljg"]
+
+  # 项目分组：GitHub API 里没有这个信息，是最值得让 AI 提的那类改动
+  - type: project
+    key: project:finance-management
+    name: Finance Management
+    summary: "Offline personal finance apps: mobile, web, and a Lux variant."
+    links:
+      - { type: includes, to: "plae-tljg/Finance-Management-App" }
+      - { type: includes, to: "ellkaimu/Finance-Management-Web" }
+      - { type: includes, to: "plae-lkm/Finance_Lux_Web" }
+
+  - type: project
+    key: project:voice-musa
+    name: Voice Cloning on MUSA
+    summary: "Voice cloning and TTS stacks ported to MooreThreads GPUs."
+    links:
+      - { type: includes, to: "LKM-Repo/GPT-SoVITS-Musa" }
+      - { type: includes, to: "LKM-Repo/so-vits-svc-musa" }
+      - { type: includes, to: "LKM-Repo/Retrieval-based-Voice-Conversion-WebUI-musa" }
+
+  - type: topic
+    key: topic:finance
+    name: Finance
+    summary: "Money, budgeting and personal-finance tooling."
+
+# 覆盖 ingest 出来的字段。两边合并时这里的优先级更高，
+# 所以重新 ingest 不会覆盖掉人工/AI 的判断。
+#
+# `type` 是可选的，但写上有好处：登录名 plae-tljg 同时是 account 和 person，
+# 不写 type 时匹配到哪个取决于顺序。写明类型的覆盖不会随顺序变。
+overrides:
+  - key: plae-tljg
+    type: account
+    summary: "Primary account: the personal site, the DeepSeek Harness review plugin, and MaaFwPhoneAI."
+
+  - key: "plae-tljg/plae-tljg"
+    summary: "The GitHub profile README."
+
+  - key: "plae-tljg/MaaFwPhoneAI"
+    set:
+      fork: true
+    summary: "A general-purpose Android GUI layer built on MaaFramework."
+
+  # topic 覆盖不全，这里补齐。这正是 AI 该提的改动：GitHub 不知道这三个是一家人。
+  - key: "plae-tljg/Finance-Management-App"
+    add_aliases: ["finance app", "fma"]
+    add_links: [{ type: tagged, to: "topic:finance" }]
+
+  - key: "ellkaimu/Finance-Management-Web"
+    add_links: [{ type: tagged, to: "topic:finance" }]
+
+  - key: "plae-lkm/Finance_Lux_Web"
+    add_links: [{ type: tagged, to: "topic:finance" }]
