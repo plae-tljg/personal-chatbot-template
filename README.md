@@ -82,6 +82,17 @@ Same schema, same synced rows, with `messages` emptied — the built database ho
 what visitors asked, and that is not yours to publish. The command refuses if any
 messages survive, and writes a manifest with the sha256 beside the file.
 
+### Publishing the static page
+
+`.github/workflows/pages.yml` deploys `web/` to GitHub Pages on every push: it
+gates on the frozen cases and the browser parity check before uploading, so a red
+build publishes nothing.
+
+One manual step, once per repository: **Settings → Pages → Source: GitHub
+Actions**. Until that is set, the build job passes and the deploy job fails with
+`Failed to create deployment (status: 404) ... Ensure GitHub Pages has been
+enabled`. Nothing in the workflow can do it for you.
+
 ### Why this exists
 
 `examples/hardcoded_bot.py` is the thing this project is a reaction to: a small
