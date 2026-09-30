@@ -54,7 +54,17 @@
           "git remote*": "allow",
           "echo *": "allow",
           "python -m personal_chatbots sql*": "allow",
-          "pc sql*": "allow"
+          "pc sql*": "allow",
+          "python -m unittest *": "allow",
+          "tail *": "allow",
+          "head *": "allow",
+          "sort *": "allow",
+          "uniq *": "allow",
+          "cut *": "allow",
+          "diff *": "allow",
+          "find *": "allow",
+          "test *": "allow",
+          "true": "allow"
         },
         "webfetch": "deny"
       }
@@ -87,7 +97,17 @@
           "git remote*": "allow",
           "echo *": "allow",
           "python -m personal_chatbots sql*": "allow",
-          "pc sql*": "allow"
+          "pc sql*": "allow",
+          "python -m unittest *": "allow",
+          "tail *": "allow",
+          "head *": "allow",
+          "sort *": "allow",
+          "uniq *": "allow",
+          "cut *": "allow",
+          "diff *": "allow",
+          "find *": "allow",
+          "test *": "allow",
+          "true": "allow"
         },
         "webfetch": "deny"
       }
