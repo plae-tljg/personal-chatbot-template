@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # So a flake can be chased without inventing a commit. An intermittent test
+  # that only runs when someone pushes is a test whose flakiness is invisible.
+  workflow_dispatch:
 
 # This workflow IS the regression gate. Git provides the baseline -- green on
 # main, red on the branch -- which is why the project needs no test_results
