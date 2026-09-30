@@ -67,28 +67,49 @@ python -m personal_chatbots test                   # rows that fire on the wrong
 
 ---
 
-## 2. Read what you are allowed to read
+## 2. Understand the data before proposing anything
 
-- `content/knowledge.yaml` — what the bot says today
-- `content/curation.yaml` — entities, groupings, overrides
-- the vocabulary: `python -m personal_chatbots entities --summary`, then `python -m personal_chatbots entities <type> <needle>`.
-  With no needle, `python -m personal_chatbots entities <type>` lists the whole type (up to 200).
-- **anything else: `python -m personal_chatbots sql "<query>"`.** Read-only by
-  construction, so explore as much as you need — joins, counts, the shape of the
-  data, whether a repository name suggests a grouping. With no query it lists
-  every table and view. Do not limit yourself to the commands someone happened to
-  write; that is what this exists for.
-  A slot only resolves to a **live** entity of the declared type, so if
-  `{language}` never resolves, check that a `language` entity exists before you
-  touch the pattern.
-- the rows themselves: `python -m personal_chatbots knowledge` shows every pattern and its hit count
-- `python -m personal_chatbots ask "..."` is the easiest way to see exactly what the runtime sees
-- `content/tests.yaml` — what must stay true
+You have **read-only SQL**. It is opened with `mode=ro`, so a write is refused by
+SQLite itself rather than by a rule — read as much as you like.
 
-You may not read the internet. If the answer is not in the repo or the built
-database, the correct outcome is to say so.
+```bash
+python -m personal_chatbots sql                    # every table and view, with row counts
+```
 
----
+Start with these; they are the ones that have actually told me something:
+
+```bash
+# every repository, in key order. Read the NAMES -- a name says things no column does.
+python -m personal_chatbots sql "select key, name, summary from entities where entity_type='repo' order by key"
+
+# what the graph looks like: which relations exist and how many of each
+python -m personal_chatbots sql "select link_type, count(*) n from entity_links group by 1 order by n desc"
+
+# repositories with the fewest links are the ones nothing points at yet
+python -m personal_chatbots sql "select e.key, count(l.id) n from entities e left join entity_links l on l.from_entity_id=e.id where e.entity_type='repo' group by e.id order by n asc limit 10"
+
+# what visitors asked that the tables could not answer, most common first
+python -m personal_chatbots sql "select * from v_unresolved_inbox"
+```
+
+**Look at the repository names specifically.** `plae-lkm/Finance_Lux_Web`,
+`LKM-Repo/PIKE-RAG_Verbose`, `ellkaimu/Finance-Management-Web` — a name can
+suggest a grouping, a family, or a theme that no row currently records. That kind
+of judgement is the most valuable thing you can add, because a machine cannot
+derive it from the metadata.
+
+Then read:
+
+- the vocabulary: `python -m personal_chatbots entities --summary`, then
+  `python -m personal_chatbots entities <type> <needle>`
+- the rows: `python -m personal_chatbots knowledge`
+- `content/knowledge.yaml`, `content/curation.yaml`, `content/tests.yaml`
+- `python -m personal_chatbots doctor` — it reports which rows have never matched
+  and **what share of traffic is going to the model**, which is the number this
+  whole loop exists to bring down
+
+Do not limit yourself to the commands listed here. They are a convenience, not
+the boundary.
 
 ## 3. Decide, then edit
 
@@ -164,7 +185,10 @@ human reviews it exactly like a code change. Include:
 1. **What the inbox showed** — the clusters, with counts, quoted verbatim.
 2. **What you changed and why** — one or two sentences per file.
 3. **Which test pins it.**
-4. **What you could not do and why.** "Three questions needed the README of
+4. **The model share**, from `python -m personal_chatbots doctor` — how many turns
+   went to the fallback before and after your change. If your round did not move
+   it, say so.
+5. **What you could not do and why.** "Three questions needed the README of
    `X`, which was not in the built documents" is the single most useful
    sentence you can write. It is how the human knows to widen ingest.
 5. **Anything you deliberately left alone**, and why.
