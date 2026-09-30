@@ -12,8 +12,9 @@ runs while serving** unless you add one.
 
 **Status: v1 runs.** 43 repositories across four GitHub identities, 176 entities,
 251 links, a README for every repository, 11 knowledge rows that answer from all
-of it, 17 seeded cases, 132 unit + invariant tests, and a browser engine that CI
-checks agrees with the Python one. Answers land in 0.1–1 ms at zero tokens.
+of it, 25 seeded cases, 149 unit + invariant tests, and a browser engine that CI
+checks agrees with the Python one. Answers land in 0.1–1 ms at zero tokens, and a
+misspelling still reaches the tables rather than the model.
 
 ## Quickstart
 
