@@ -12,7 +12,7 @@ maintenance agent does), `docs/INGEST_GITHUB.md` (how entities get built).
 
 ## 1. What this is
 
-A public chatbot answering questions about one person's public work — 42
+A public chatbot answering questions about one person's public work — 43
 repositories across four GitHub identities. The runtime answers from SQLite rows
 built out of `content/*.yaml` plus GitHub metadata. No model runs while serving.
 

@@ -423,9 +423,12 @@ def cmd_knowledge(args: argparse.Namespace) -> int:
     return 0
 
 
-#: Rungs the browser engine implements. `fallback` is excluded on purpose: a
-#: browser-side call would put the API key in the page, so the static site cannot
-#: have one (docs/STATIC_SITE.md). `composite` is L3 and not built anywhere yet.
+#: Rungs the browser engine implements. `fallback` is excluded on purpose: the
+#: endpoint answers a browser request but sends no Access-Control-Allow-Origin,
+#: so the page is not allowed to read the reply -- with or without a key. A
+#: browser-side call is impossible, not merely unwise (docs/STATIC_SITE.md, and
+#: the curl in it that settles the question). `composite` is L3 and not built
+#: anywhere yet.
 BROWSER_RUNGS = ("knowledge", "entity", "search", "refuse")
 
 

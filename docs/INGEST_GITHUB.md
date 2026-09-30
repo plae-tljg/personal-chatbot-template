@@ -9,7 +9,7 @@ The bot's knowledge comes from four public GitHub identities:
 | `github:ellkaimu` | `ellkaimu` | 10 | Android apps, daily-utility tools |
 | `github:plae-lkm` | `plae-lkm` | 13 | small scripts with personality (cables, yinyang, three-body) |
 
-42 repositories total. That is enough real, messy data to prove the design:
+43 repositories total. That is enough real, messy data to prove the design:
 mixed languages, snake_case and CamelCase names, forks mixed with originals,
 empty descriptions, and one repository with no language at all.
 
@@ -41,7 +41,7 @@ the bot from sounding like a README concatenator.
 | languages | `GET /repos/{owner}/{name}/languages` | optional; the primary `language` field is usually enough |
 
 Rate limits: 60 requests/hour unauthenticated, 5000/hour with a token. A full
-seeding of four accounts is 4 + 4 + ~42 = ~50 requests, so it fits in the
+seeding of four accounts is 4 + 4 + 43 = 51 requests, so it fits in the
 unauthenticated budget but only if README fetches are cached. Use a token
 (`GITHUB_TOKEN`) for anything repeated, and treat the token as an ingest-only
 credential that has no access to this project's database.

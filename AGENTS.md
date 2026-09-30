@@ -10,7 +10,7 @@ about *this* owner and will fail once you change the sources.
 
 ## What this project is
 
-A public chatbot that answers questions about one person's public work (42
+A public chatbot that answers questions about one person's public work (43
 repositories across four GitHub identities: `plae-tljg`, `LKM-Repo`,
 `ellkaimu`, `plae-lkm`).
 
@@ -118,6 +118,20 @@ to iterate on content without touching GitHub:
 python -m personal_chatbots build --offline --cache tests/fixtures
 python -m unittest discover -s tests -t .      # the whole suite, no network
 ```
+
+`tests/fixtures` carries a README for every repository, so an offline build has
+the same 43 documents as a live one. CI and the published page therefore see the
+data your change was tested against, not a thinner version of it.
+
+Any read command also takes `--db`, which points at a database somewhere else:
+
+```bash
+python -m personal_chatbots release                       # dist/bot.db, no live state
+python -m personal_chatbots --db dist/bot.db sql "select count(*) from documents"
+```
+
+Use it to inspect a released copy, or to answer a question from the fixture build
+without disturbing `data/bot.db`.
 
 ## Levels — what kind of change is this?
 

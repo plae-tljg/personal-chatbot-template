@@ -314,7 +314,7 @@ el("hint").textContent =
   `static page — the ladder runs in your browser, 0 tokens. ` +
   `references resolve against earlier turns; nothing else is carried across.` +
   (dropped.length
-    ? ` the server build also has ${dropped.join(", ")}; a static page cannot, because it would need an API key in the page.`
+    ? ` the server build also has ${dropped.join(", ")}; a static page cannot, because the endpoint that would answer sends no CORS header — the browser withholds the reply, key or no key.`
     : "");
 el("meters").innerHTML =
   `<span>knowledge <b>${bot.data.knowledge.length}</b></span>` +

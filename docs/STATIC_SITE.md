@@ -169,6 +169,37 @@ This project takes (1) for the public site. It also happens to be the option tha
 keeps the refusal rate measurable — a static page's refusals land in
 `localStorage`, not the inbox, so nothing is hidden either way.
 
+### The key is not the real obstacle, and it is worth knowing why
+
+Option (3) does not work either, and neither does "publish the key, the account
+is $0". Measured against the default endpoint,
+`POST https://opencode.ai/zen/v1/chat/completions`:
+
+```
+OPTIONS (preflight, as a browser sends it)    -> 404, no Access-Control-* headers
+POST with Origin: https://plae-tljg.github.io -> 200, no Access-Control-Allow-Origin
+```
+
+The request is accepted. The *response* is withheld by the browser, because
+nothing in it says the page may read it — and a request carrying `Authorization`
+is preflighted first, which 404s. So a page cannot call this endpoint at all,
+with or without a key, and no amount of willingness to leak one changes that.
+
+This matters beyond the decision: "we chose not to expose the key" is a judgement
+a reader can argue with, and "the browser is not allowed to read the reply" is
+not. A model on the static site needs a CORS-enabled endpoint or a proxy, and
+then the key lives in the proxy. One `curl` settles it before anyone writes
+browser code that cannot work:
+
+```bash
+curl -s -D - -o /dev/null -X OPTIONS <endpoint> \
+  -H 'Origin: https://example.github.io' \
+  -H 'Access-Control-Request-Method: POST' \
+  -H 'Access-Control-Request-Headers: authorization,content-type'
+```
+
+No `access-control-allow-origin` in that output means option (3) is closed.
+
 ## What the browser engine deliberately cannot do
 
 It answers, cites, and refuses. It cannot build, test, or maintain anything —

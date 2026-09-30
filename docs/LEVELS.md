@@ -99,7 +99,7 @@ agent can see which level it is working at without guessing.
 
 ### Why L1 first
 
-- L1 is a complete, honest product. It answers 42 repositories from ten rows,
+- L1 is a complete, honest product. It answers 43 repositories from eleven rows,
   refuses what it does not know, and records the refusal.
 - L2 and L3 are **appends**, not rewrites. The seams already exist:
   `messages.session_id` gives every turn a conversation identity, `ladder` in

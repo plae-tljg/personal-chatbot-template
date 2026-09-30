@@ -109,10 +109,13 @@ Useful sanity checks while doing it:
 
 ### Known limitations to fix in v1.5
 
-- **Only ten READMEs are fetched** (`build.readme_limit`), because the
-  unauthenticated API allows 60 requests/hour. The search rung therefore covers
-  ten repositories, not 42. Setting `GITHUB_TOKEN` raises the limit to 5000/hour;
-  the cap should then follow the token's presence rather than a constant.
+- **~~Only ten READMEs are fetched~~** — fixed. `readme_limit` guessed ten from
+  arithmetic that was wrong: four accounts and their listings are 8 requests, not
+  46, so 43 READMEs fit inside the 60/hour budget with room to spare. `auto` now
+  asks for the budget and lets the API refuse, which is resumable because every
+  response is cached and a cached response spends nothing. All 43 repositories
+  have searchable text, and `tests/fixtures` carries them, so the offline build
+  sees the same 43 documents a live one does.
 - **Single- and two-character names get no alias** (`C`, `C++`). Matching is
   token-based, so the three-character floor is more conservative than it needs to
   be. Until it is revisited, such names need a curation alias.

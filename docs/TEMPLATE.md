@@ -7,7 +7,7 @@ copy the parts you want. It is not a GitHub template repository and there is no
 
 So there are two ways to read it:
 
-- **as a working example** — a bot that answers questions about 42 real
+- **as a working example** — a bot that answers questions about 43 real
   repositories, maintained by an agent through pull requests; and
 - **as an argument** — the pattern, with the content swapped out.
 

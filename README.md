@@ -10,10 +10,10 @@ runs while serving** unless you add one.
 > files hold everything specific to this instance, and which one will bite you
 > first. It is a reference to clone and read, not a GitHub template.
 
-**Status: v1 runs.** 42 repositories across four GitHub identities, 174 entities,
-11 knowledge rows, 16 seeded cases, 103 unit + invariant tests, and a browser
-engine that CI checks agrees with the Python one. Answers land in
-0.1–1 ms at zero tokens.
+**Status: v1 runs.** 43 repositories across four GitHub identities, 176 entities,
+251 links, a README for every repository, 11 knowledge rows that answer from all
+of it, 17 seeded cases, 132 unit + invariant tests, and a browser engine that CI
+checks agrees with the Python one. Answers land in 0.1–1 ms at zero tokens.
 
 ## Quickstart
 
@@ -64,9 +64,23 @@ python -m personal_chatbots build --offline --cache tests/fixtures
 in `AGENTS.md` and the skills uses that form rather than `pc`.
 
 To pull fresh data from GitHub instead of the snapshot, drop `--offline
---cache tests/fixtures`. That needs no token for four accounts, and
-`GITHUB_TOKEN` raises the rate limit when you want more READMEs
-(`build.readme_limit`, currently 10).
+--cache tests/fixtures`. That needs no token for four accounts: their listings
+are 8 requests and all 43 READMEs another 43, inside the 60/hour unauthorised
+budget. `GITHUB_TOKEN` raises the ceiling to 5000/hour if your portfolio is
+larger (`build.readme_limit`, `auto` by default).
+
+### Publishing the database
+
+`pc release` writes a copy that is safe to hand to someone else:
+
+```bash
+python -m personal_chatbots release            # -> dist/bot.db
+python -m personal_chatbots --db dist/bot.db ask "what does dsh-review do?"
+```
+
+Same schema, same synced rows, with `messages` emptied — the built database holds
+what visitors asked, and that is not yours to publish. The command refuses if any
+messages survive, and writes a manifest with the sha256 beside the file.
 
 ### Why this exists
 
