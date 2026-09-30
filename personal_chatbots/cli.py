@@ -180,6 +180,78 @@ def cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sql(args: argparse.Namespace) -> int:
+    """Run any read-only query against the database.
+
+    The maintainer is not limited to the commands this file happens to offer.
+    `pc entities` covers the common questions, and `pc sql` covers everything
+    else -- joins, counts, whatever the agent needs to understand the data before
+    proposing a change.
+
+    Opened with `mode=ro`, so this is not a policy the agent is asked to respect:
+    SQLite itself rejects an INSERT, an UPDATE or a DROP on this connection with
+    "attempt to write a readonly database". Reading is unlimited; writing is
+    impossible. That is the distinction the permission config originally got
+    wrong when it denied `sqlite3` outright.
+    """
+    import sqlite3
+
+    cfg = _prepare(args)
+    if not cfg.db_path.exists():
+        return _fail(f"{cfg.db_path} does not exist -- run `pc build`")
+
+    query = (args.query or "").strip()
+    connection = sqlite3.connect(f"file:{cfg.db_path}?mode=ro", uri=True)
+    connection.row_factory = sqlite3.Row
+    try:
+        if not query or query.lower() in ("tables", ".tables"):
+            rows = connection.execute(
+                "SELECT type, name FROM sqlite_master"
+                " WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'"
+                " AND name NOT LIKE '%_fts_%' ORDER BY type, name"
+            ).fetchall()
+            print("tables and views (query them with `pc sql \"...\"`):\n")
+            for row in rows:
+                count = ""
+                if row["type"] == "table":
+                    n = connection.execute(f"SELECT COUNT(*) AS n FROM {row['name']}").fetchone()["n"]
+                    count = f"{n:>6} rows"
+                print(f"  {row['type']:<6} {row['name']:<24} {count}")
+            print("\n  entities / knowledge / documents / links are the synced data;")
+            print("  messages is live and changes as people ask things.")
+            return 0
+
+        cursor = connection.execute(query)
+        rows = cursor.fetchmany(args.limit)
+        if not rows:
+            print("(no rows)")
+            return 0
+        columns = list(rows[0].keys())
+        if args.json:
+            print(json.dumps([dict(row) for row in rows], ensure_ascii=False, indent=1))
+            return 0
+
+        widths = [len(c) for c in columns]
+        body = []
+        for row in rows:
+            cells = ["" if row[c] is None else str(row[c]) for c in columns]
+            cells = [c if len(c) <= 60 else c[:57] + "..." for c in cells]
+            body.append(cells)
+            widths = [max(w, len(c)) for w, c in zip(widths, cells)]
+        print("  " + "  ".join(c.ljust(w) for c, w in zip(columns, widths)))
+        print("  " + "  ".join("-" * w for w in widths))
+        for cells in body:
+            print("  " + "  ".join(c.ljust(w) for c, w in zip(cells, widths)))
+        if len(rows) == args.limit:
+            print(f"\n  (stopped at {args.limit} rows; raise with --limit)")
+        return 0
+    except sqlite3.OperationalError as exc:
+        return _fail(f"{exc}\n  (this connection is read-only: SELECT only. Run `pc sql` with no"
+                     f" query to list the tables.)")
+    finally:
+        connection.close()
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Why is (or is not) the bot answering? One command, no guessing.
 
@@ -628,6 +700,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--bundle", default=None,
                    help="also write a copyable directory: data.json + engine.js + CONTRACT.md")
     p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("sql", help="any read-only query against the database")
+    p.add_argument("query", nargs="?", default="", help="a SELECT; omit to list the tables")
+    p.add_argument("--limit", type=int, default=50)
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_sql)
 
     p = sub.add_parser("doctor", help="why is (or is not) the bot answering?")
     p.add_argument("--limit", type=int, default=10)

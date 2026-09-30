@@ -3,11 +3,10 @@
   "_note": [
     "Config for running the maintenance agent on this repo.",
     "The runtime never uses any of this: no model runs while serving.",
-    "AGENTS.md is read automatically by opencode; these agents and commands",
-    "add the boundary the design depends on -- the maintainer may edit",
-    "content/, and it may not touch the engine or the database.",
-    "Run `opencode models` (or /models in the TUI) for the current free list;",
-    "the free Zen pool rotates."
+    "Reading is unlimited: `pc sql` opens the database read-only, so SQLite itself",
+    "refuses a write. Writing is limited to content/ -- not because the agent is",
+    "distrusted, but because data/bot.db is a projection and a write there is lost on",
+    "the next build. See .opencode/README.md."
   ],
   "instructions": [
     "docs/LEVELS.md",
@@ -53,7 +52,9 @@
           "git branch*": "allow",
           "git show*": "allow",
           "git remote*": "allow",
-          "echo *": "allow"
+          "echo *": "allow",
+          "python -m personal_chatbots sql*": "allow",
+          "pc sql*": "allow"
         },
         "webfetch": "deny"
       }
@@ -84,7 +85,9 @@
           "git branch*": "allow",
           "git show*": "allow",
           "git remote*": "allow",
-          "echo *": "allow"
+          "echo *": "allow",
+          "python -m personal_chatbots sql*": "allow",
+          "pc sql*": "allow"
         },
         "webfetch": "deny"
       }

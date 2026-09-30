@@ -90,9 +90,25 @@ pc serve                 # FastAPI + the chatroom UI
 `pc` is the console script from `pyproject.toml`. Without installing, the same
 commands are `python -m personal_chatbots <command>`.
 
-`sqlite3` is deliberately **not** on your allow-list. Use `pc entities` and
-`pc knowledge` to inspect; `data/bot.db` is a build artifact and reading it by
-hand invites editing it by hand.
+### Reading the data
+
+**You may read the database as freely as you like.** `pc sql` runs any query:
+
+```bash
+pc sql                                   # list the tables and views, with row counts
+pc sql "select key, name from entities where entity_type='repo' limit 10"
+pc sql "select * from v_unresolved_inbox"
+pc sql --json "select slug, hits from v_knowledge_coverage order by hits"
+```
+
+It opens the database with `mode=ro`, so **SQLite itself rejects a write** — not a
+rule you are asked to respect, but a property of the connection. Read everything,
+join anything, look at whatever helps you understand the data before proposing a
+change to it.
+
+`sqlite3` is denied only because *the CLI* can write, and a write to
+`data/bot.db` is lost on the next build — a trap rather than a freedom. `pc sql`
+is the same freedom without the trap.
 
 Add `--offline --cache tests/fixtures` to `build` to work from the committed API
 snapshot instead of the network. That is what CI does, and it is the fastest way

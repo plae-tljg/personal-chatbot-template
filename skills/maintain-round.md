@@ -73,6 +73,11 @@ python -m personal_chatbots test                   # rows that fire on the wrong
 - `content/curation.yaml` — entities, groupings, overrides
 - the vocabulary: `python -m personal_chatbots entities --summary`, then `python -m personal_chatbots entities <type> <needle>`.
   With no needle, `python -m personal_chatbots entities <type>` lists the whole type (up to 200).
+- **anything else: `python -m personal_chatbots sql "<query>"`.** Read-only by
+  construction, so explore as much as you need — joins, counts, the shape of the
+  data, whether a repository name suggests a grouping. With no query it lists
+  every table and view. Do not limit yourself to the commands someone happened to
+  write; that is what this exists for.
   A slot only resolves to a **live** entity of the declared type, so if
   `{language}` never resolves, check that a `language` entity exists before you
   touch the pattern.
