@@ -45,7 +45,7 @@ sentence the section has to earn.
 |---|---|---|---|
 | 15 | **Proposals are pull requests** | `CONCERNS.md` C5 | When the maintainer is an ordinary coding agent, `proposals`/`reviews`/`revisions` tables are seven tables rebuilding what git already does. |
 | 16 | **Tests are files, and git is the baseline** | `AGENTS.md`, `ROADMAP.md` | Green on `main`, red on the branch is the whole regression mechanism. No `test_results` table. |
-| 17 | **The inbox is the product** | `DEV_LOOP` → `skills/maintain-round.md` | `unresolved = 1` on a partial index is worth more than any amount of prompt engineering. |
+| 17 | **The inbox is the product** | `skills/maintain-round.md` | `unresolved = 1` on a partial index is worth more than any amount of prompt engineering. |
 | 18 | **Answering is not knowing** | `CONCERNS.md` C1 | A fallback answer is a real answer to the visitor and a non-answer from the structure. Clearing `unresolved` would answer the visitor and blind the loop. |
 | 19 | **A refusal with no way forward reads as broken** | `engine.py` `suggestions()` | Follow-ups are derived from the knowledge rows, and a suggestion that would itself refuse is not offered. |
 | 20 | **The validator is the boundary** | `CONCERNS.md` C2, `content.py` | A price in a sentence is a value that will change, and a stale one reads exactly like a correct one. Refused at build time. |
