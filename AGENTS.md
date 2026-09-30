@@ -133,6 +133,25 @@ python -m personal_chatbots --db dist/bot.db sql "select count(*) from documents
 Use it to inspect a released copy, or to answer a question from the fixture build
 without disturbing `data/bot.db`.
 
+## Matching — which layer needs changing
+
+Read **`docs/MATCHING.md`** before adding a pattern or an alias. The short
+version, because picking the wrong layer is the most common wasted round:
+
+| the visitor's problem | the fix | where |
+|---|---|---|
+| calls the repo by another name | alias | `curation.yaml` |
+| asks a question no row covers | a new pattern, or a new row | `knowledge.yaml` |
+| misspells a word in a question a row answers | nothing — fuzzy handles it | — |
+| asks in another language | patterns in that language (locale is a decision) | `knowledge.yaml` |
+| two entities match one name | **refuse** — that is correct behaviour | `tests.yaml` |
+
+The knowledge rung tolerates a typo (one edit; two past eight tokens) but only
+after every slot has resolved to exactly one entity, only against a pattern that
+declares the same slots with the same types, and never when two candidates are
+equally close. `runtime.fuzzy.enabled` turns it off. When you widen any of this,
+the case to add to `tests.yaml` is the near miss that must **still refuse**.
+
 ## Levels — what kind of change is this?
 
 Read **`docs/LEVELS.md`** before deciding how to implement anything. The short
@@ -201,7 +220,7 @@ baseline: green on `main`, red on your branch.
    `{stars}`, `{hours}` must resolve from an entity. This is the cost rule
    (`docs/CONCERNS.md` C2), not style.
 4. **Never copy a row to cover a variation.** Add a pattern to the existing row
-   instead. A dozen rows cover 42 repositories; keep it that way.
+   instead. A dozen rows cover 43 repositories; keep it that way.
 5. **Never delete a test.** If its expectation is wrong, set
    `status: quarantined` and say why in `note`.
 6. **Never invent a repository, metric, or URL.** Use only what ingest produced
@@ -235,5 +254,11 @@ baseline: green on `main`, red on your branch.
   adding a new row.
 - A row steals questions → add a confusable negative test, then tighten
   `match_json.exclude`.
+- A question is answered *approximately* when it should have refused → that is
+  the fuzzy pass, and it is the failure mode with no natural limit. Read
+  `docs/MATCHING.md` §"What it will not do", add the near miss to `tests.yaml`
+  first, and only then tighten a threshold.
+- An answer says "≈1 edit away" → the tables answered, but not word for word.
+  Worth knowing when judging whether a phrasing is really covered.
 - Two entities match one alias → **refuse**, do not pick a favourite. Ambiguity
   is recorded in `tests.yaml` (`ambiguity.*`).

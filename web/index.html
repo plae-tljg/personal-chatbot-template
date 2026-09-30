@@ -170,6 +170,10 @@ function turnEl(question, answer, { live = false } = {}) {
         : answer.source === "fallback" ? "model — still recorded"
         : "from tables"}</span>` +
       (answer.source ? `<span class="badge">${esc(answer.source)}${answer.matched ? ":" + esc(answer.matched) : ""}</span>` : "") +
+      // A tolerated typo is shown, not hidden: the answer came from the tables,
+      // but it is fair for the visitor to know the question was not matched
+      // word for word. A guess you can see is a bug report.
+      (answer.fuzzy ? `<span class="badge">≈${answer.fuzzy} edit${answer.fuzzy > 1 ? "s" : ""} away</span>` : "") +
       (answer.latency_ms != null ? `<span class="badge">${answer.latency_ms} ms</span>` : "") +
       (live ? `<span class="badge">${answer.source === "fallback" ? "model call" : "0 tokens"}</span>` : "") +
       (answer.citations?.length ? `<span>${citations(answer.citations, live ? bot.data.bot.max_citations : 0)}</span>` : "") +

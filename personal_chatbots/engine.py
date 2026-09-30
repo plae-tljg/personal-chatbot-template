@@ -28,6 +28,7 @@ from typing import Any, Callable, Sequence
 
 from .config import Config
 from .frame import Frame, apply as apply_frame
+from . import similarity
 from .resolve import AliasIndex, Match, resolve, single_entity
 from .store import Citation, Entity, KnowledgeRow, Store
 from .textnorm import normalize, render, tokenize
@@ -77,6 +78,13 @@ class Answer:
     refs: dict[str, str] = field(default_factory=dict)
     #: example questions this bot can actually answer right now
     suggestions: list[str] = field(default_factory=list)
+    #: Edit distance when the knowledge rung tolerated a typo or a rephrase,
+    #: else None. None means every word was the visitor's own -- which is the
+    #: normal case, and the thing worth being able to tell apart in a log.
+    fuzzy: int | None = None
+    #: The skeleton that was matched fuzzily ("" for an exact match), so the
+    #: record shows what the bot thought was asked, not just that it was unsure.
+    fuzzy_pattern: str = ""
 
     @property
     def refused(self) -> bool:
@@ -239,6 +247,26 @@ class Runtime:
     # -- rung 1: knowledge ----------------------------------------------------
 
     def rung_knowledge(self, tokens: list[str]) -> Answer | None:
+        """Exact patterns first, then one fuzzy pass. Never a guess.
+
+        The exact pass is unchanged and runs first, so nothing that matched
+        before this existed matches differently now. Only when the whole corpus
+        has refused exactly does the typo-tolerant pass run, and it is
+        deliberately stingy: a pattern is only a candidate if it declares
+        exactly the slots this question resolved, it is within one edit (two on
+        patterns of five tokens or more), and no other candidate is equally
+        close.
+        """
+        exact = self._knowledge_pass(tokens, fuzzy=False)
+        if exact is not None:
+            return exact
+        if not self.cfg.fuzzy_enabled:
+            return None
+        return self._knowledge_pass(tokens, fuzzy=True)
+
+    def _knowledge_pass(self, tokens: list[str], *, fuzzy: bool) -> Answer | None:
+        candidates: list[tuple[int, object, str, dict]] = []
+
         for row in self.rows:
             if row.locale and row.locale != self.cfg.default_locale:
                 continue
@@ -255,25 +283,54 @@ class Runtime:
             if any(word and word in joined for word in exclude):
                 continue
 
-            patterns = {normalize(p) for p in row.patterns}
-            if skeleton not in patterns:
-                continue
+            patterns = [normalize(p) for p in row.patterns]
+            if fuzzy:
+                # The row's slot *types* travel with the skeleton, so a
+                # placeholder can only be filled by the same kind of thing.
+                hit = similarity.best_match(
+                    skeleton,
+                    patterns,
+                    exclude=exclude,
+                    slot_types={name: kind for name, kind in row.slots.items()},
+                )
+                if hit is None:
+                    continue
+                distance = hit[1]
+            else:
+                if skeleton not in set(patterns):
+                    continue
+                distance = 0
+            candidates.append((distance, row, skeleton, slots))
 
-            result = run_action(row, slots, self.store, self.cfg)
-            if not result.text:
-                continue
-            return Answer(
-                text=result.text,
-                source="knowledge",
-                # Never truncated. `citations_json` is the record of what an
-                # answer was built from -- the frame reads it to resolve "the
-                # second one", so a display cap here silently shortens the list
-                # a visitor can refer back to. Capping is a rendering decision.
-                citations=result.citations,
-                matched_slug=row.slug,
-                slots=slots,
-            )
-        return None
+        if not candidates:
+            return None
+        candidates.sort(key=lambda c: c[0])
+        if fuzzy and len(candidates) > 1 and candidates[0][0] == candidates[1][0]:
+            # Two different rows are equally close to this question. This is the
+            # same ambiguity the entity resolver refuses on, one level up: the
+            # question is not a bad spelling of one thing, it is between things.
+            return None
+
+        distance, row, skeleton, slots = candidates[0]
+        result = run_action(row, slots, self.store, self.cfg)
+        if not result.text:
+            return None
+        return Answer(
+            text=result.text,
+            source="knowledge",
+            # Never truncated. `citations_json` is the record of what an
+            # answer was built from -- the frame reads it to resolve "the
+            # second one", so a display cap here silently shortens the list
+            # a visitor can refer back to. Capping is a rendering decision.
+            citations=result.citations,
+            matched_slug=row.slug,
+            slots=slots,
+            # Recorded, not hidden. "This answered a question that was not asked
+            # word for word" is the one thing a human needs to know to judge
+            # whether tolerance was worth it.
+            fuzzy=distance or None,
+            fuzzy_pattern=skeleton if distance else "",
+        )
 
     # -- rung 2: entity -------------------------------------------------------
 

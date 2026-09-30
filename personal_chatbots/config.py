@@ -96,6 +96,17 @@ class Config:
         return list(self.data["runtime"]["ladder"])
 
     @property
+    def fuzzy_enabled(self) -> bool:
+        """Whether the knowledge rung may tolerate a typo.
+
+        On by default: a visitor who misspells a repository name knows what they
+        meant, and "I don't have that in my tables" about a repository the bot
+        knows is the least useful possible answer. Turn it off to test whether a
+        phrasing is *covered* rather than merely close to something covered.
+        """
+        return bool(self.data.get("runtime", {}).get("fuzzy", {}).get("enabled", True))
+
+    @property
     def level(self) -> int:
         return int(self.data["runtime"]["level"])
 

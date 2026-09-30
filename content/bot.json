@@ -39,6 +39,10 @@
       "timeout_ms": 12000,
       "max_tokens": 220,
       "max_context_entities": 6
+    },
+    "fuzzy": {
+      "_note": "Typo tolerance in the knowledge rung: a question one edit from a pattern still matches it, as long as no other pattern is equally close and the slots line up. Set enabled=false for strict exact matching -- useful when you are testing whether a phrasing is covered rather than whether it is close to something covered. The distances themselves (1 edit, 2 past eight tokens) live in personal_chatbots/similarity.py, because they are a judgement about this matcher rather than a per-deployment setting.",
+      "enabled": true
     }
   },
   "build": {

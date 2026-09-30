@@ -125,3 +125,53 @@
   expect:
     refuses: true
     answer_contains: ["我"]
+
+# ---- 容错：一个字母写错、缩写、语法小漂移，不应该是"我的表里没有" ----
+# 这几条是 fuzzy 通道存在的理由。阈值收紧过一次：distance 2 曾经放过
+# "what is Finance-Management about?" -> "what is the {project} project"，
+# 于是把一条歧义拒答变成了答案。宁可少救几个错别字，也不能猜。
+- slug: fuzzy.typo-in-ordinary-word
+  question: "what is dsh-review abotu?"
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-tljg/dsh-review" }
+
+- slug: fuzzy.typo-transposed-letters
+  question: "what is dsh-review abuot?"   # 抄错字母是最常见的一种
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-tljg/dsh-review" }
+
+- slug: fuzzy.contraction
+  question: "what's dsh-review about?"
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-tljg/dsh-review" }
+
+- slug: fuzzy.plural-drift
+  question: "which project use Kotlin?"   # 少了 s / 用了单数
+  expect:
+    source: knowledge
+    answer_contains: ["MaaFwPhoneAI"]
+
+# ---- 容错的边界：长得像不代表同一个问题， tolerate 不能变成猜 ----
+# 每个都有它存在的理由，不是凑数。
+- slug: fuzzy.must-not-invent-a-topic
+  question: "what is the weather today?"   # 骨架没有槽位，绝不能被当成 {repo}
+  expect:
+    refuses: true
+
+- slug: fuzzy.must-not-answer-a-new-question
+  question: "how many stars does dsh-review have?"   # 这是新形状，该由知识行覆盖，不该被 fuzzy 硬凑
+  expect:
+    refuses: true
+
+- slug: fuzzy.must-not-bridge-slot-types
+  question: "what is Finance-Management about?"   # {project} 不能借 {repo} 的句式（歧义用例的姊妹条）
+  expect:
+    refuses: true
+
+- slug: fuzzy.must-not-match-unrelated-verb
+  question: "why is the sky blue?"
+  expect:
+    refuses: true

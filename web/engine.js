@@ -365,7 +365,129 @@ export function createBot(data) {
     return { text: "", citations: [] };
   }
 
+  // ---- typo tolerance (mirror of personal_chatbots/similarity.py) ----------
+  // Drift between these two implementations is what web/parity.mjs exists to
+  // catch, so this is a deliberate transliteration rather than a tidier
+  // rewrite: same rules, same thresholds, same refusals.
+
+  const LONG_PATTERN_TOKENS = 8;
+  const MIN_TOKENS_FOR_FUZZ = 4;
+
+  // Damerau-Levenshtein: a swapped pair costs one, not two. "abotu" is one
+  // slip of the fingers to a reader, and plain Levenshtein calls it two edits.
+  function editDistance(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    let twoBack = null;
+    let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
+    for (let i = 1; i <= a.length; i++) {
+      const current = [i];
+      for (let j = 1; j <= b.length; j++) {
+        let cost = Math.min(
+          previous[j] + 1,
+          current[j - 1] + 1,
+          previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+        );
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1] && twoBack) {
+          cost = Math.min(cost, twoBack[j - 2] + 1);
+        }
+        current.push(cost);
+      }
+      twoBack = previous;
+      previous = current;
+    }
+    return previous[b.length];
+  }
+
+  function pairCost(left, right) {
+    return Math.min(editDistance([...left], [...right]), Math.max(left.length, right.length));
+  }
+
+  function wordDistance(a, b) {
+    if (a.length === 0) return b.reduce((n, w) => n + w.length, 0);
+    if (b.length === 0) return a.reduce((n, w) => n + w.length, 0);
+    let previous = [0];
+    for (const w of b) previous.push(previous[previous.length - 1] + w.length);
+    for (const left of a) {
+      const current = [previous[0] + left.length];
+      for (let j = 1; j <= b.length; j++) {
+        current.push(Math.min(
+          previous[j] + left.length,
+          current[j - 1] + b[j - 1].length,
+          previous[j - 1] + pairCost(left, b[j - 1]),
+        ));
+      }
+      previous = current;
+    }
+    return previous[b.length];
+  }
+
+  function skDistance(skeleton, pattern) {
+    const sk = skeleton.split(" ").filter(Boolean);
+    const pat = pattern.split(" ").filter(Boolean);
+    return Math.min(wordDistance(sk, pat), editDistance(sk, pat));
+  }
+
+  function fuzzLimit(pattern) {
+    const n = pattern.split(" ").filter(Boolean).length;
+    if (n < MIN_TOKENS_FOR_FUZZ) return 0;
+    return n >= LONG_PATTERN_TOKENS ? 2 : 1;
+  }
+
+  function slotTokens(text) {
+    return text.split(" ").filter((w) => w.startsWith("{"));
+  }
+
+  // The one pattern this skeleton may be matched to, or null.
+  // Exported below as well: web/engine.test-ish parity is checked from Python
+  // (tests/test_similarity.py) by asking this file for the same numbers, so a
+  // tweak to one implementation cannot pass unnoticed.
+  function bestMatch(skeleton, patterns, exclude, slotTypes) {
+    const blocked = new Set(exclude || []);
+    const sk = skeleton.split(" ").filter(Boolean);
+    const pat0 = slotTokens(skeleton);
+    const names0 = pat0.map((w) => w.replace(/[{}]/g, ""));
+    const types = slotTypes || {};
+    const scored = [];
+    for (const raw of patterns) {
+      if (blocked.has(raw)) continue;
+      const parts = raw.split(" ").filter(Boolean);
+      const slotTokensHere = parts.filter((w) => w.startsWith("{"));
+      if (slotTokensHere.join(" ") !== pat0.join(" ")) continue;
+      // A placeholder is only satisfied by the same kind of placeholder.
+      const hereNames = slotTokensHere.map((w) => w.replace(/[{}]/g, ""));
+      if (hereNames.length) {
+        const a = hereNames.map((n) => types[n] || "").sort().join(",");
+        const b = names0.map((n) => types[n] || "").sort().join(",");
+        if (a !== b) continue;
+      }
+      const limit = fuzzLimit(raw);
+      if (limit === 0) continue;
+      if (pat0.length && parts.length) {
+        if (sk[0] !== parts[0]) continue;
+        if (pairCost(sk[sk.length - 1], parts[parts.length - 1]) > 1) continue;
+      }
+      const gapTokens = Math.abs(sk.length - parts.length);
+      const gapChars = Math.abs(skeleton.length - raw.length);
+      if (gapTokens > limit && gapChars > limit) continue;
+      const d = skDistance(skeleton, raw);
+      if (d <= limit) scored.push([d, raw]);
+    }
+    if (!scored.length) return null;
+    scored.sort((x, y) => x[0] - y[0]);
+    // Equally close means ambiguous, and ambiguity refuses.
+    if (scored.length > 1 && scored[0][0] === scored[1][0]) return null;
+    return scored[0];
+  }
+
+  // Exact patterns first, then one fuzzy pass. Same order as Python: nothing
+  // that used to match can start matching differently.
   function rungKnowledge(tokens) {
+    return knowledgePass(tokens, false) || knowledgePass(tokens, true);
+  }
+
+  function knowledgePass(tokens, fuzzy) {
+    const candidates = [];
     for (const row of knowledge) {
       if (row.locale && row.locale !== bot.default_locale) continue;
       const resolved = resolve(tokens, row.slots || {}, index);
@@ -375,22 +497,39 @@ export function createBot(data) {
       const exclude = (row.match?.exclude || []).map(normalize).filter(Boolean);
       if (require.some((w) => !joined.includes(w))) continue;
       if (exclude.some((w) => joined.includes(w))) continue;
-      const patterns = new Set((row.patterns || []).map(normalize));
-      if (!patterns.has(resolved.skeleton)) continue;
-      const result = runAction(row, resolved.slots);
-      if (!result.text) continue;
-      return {
-        text: result.text, source: "knowledge", citations: result.citations,
-        matched: row.slug,
-        // `slots` is part of the public answer shape (slot -> key), so the
-        // resolved entities ride alongside it: a key alone cannot be looked up
-        // unambiguously, and the follow-ups need the entity.
-        slots: Object.fromEntries(
-          Object.entries(resolved.slots).map(([k, v]) => [k, v.key])),
-        _slotEntities: Object.values(resolved.slots),
-      };
+      const patterns = (row.patterns || []).map(normalize);
+      let distance = 0;
+      if (fuzzy) {
+        const hit = bestMatch(resolved.skeleton, patterns, exclude, row.slots || {});
+        if (!hit) continue;
+        distance = hit[0];
+      } else if (!new Set(patterns).has(resolved.skeleton)) {
+        continue;
+      }
+      candidates.push({ distance, row, resolved });
     }
-    return null;
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => a.distance - b.distance);
+    if (fuzzy && candidates.length > 1 && candidates[0].distance === candidates[1].distance) {
+      // Two rows equally close: the question is between things, not a bad
+      // spelling of one. Refuse, exactly as the entity resolver does.
+      return null;
+    }
+    const { distance, row, resolved } = candidates[0];
+    const result = runAction(row, resolved.slots);
+    if (!result.text) return null;
+    return {
+      text: result.text, source: "knowledge", citations: result.citations,
+      matched: row.slug,
+      // `slots` is part of the public answer shape (slot -> key), so the
+      // resolved entities ride alongside it: a key alone cannot be looked up
+      // unambiguously, and the follow-ups need the entity.
+      slots: Object.fromEntries(
+        Object.entries(resolved.slots).map(([k, v]) => [k, v.key])),
+      _slotEntities: Object.values(resolved.slots),
+      // Present only when a typo was tolerated, so the page can say so.
+      ...(distance ? { fuzzy: distance } : {}),
+    };
   }
 
   function rungEntity(tokens) {

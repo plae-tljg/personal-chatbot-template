@@ -48,6 +48,35 @@ for (const [question, expected] of probe) {
     failed += 1;
   }
 }
+
+// Typo tolerance exists in both engines, and a threshold tweaked in one of them
+// is exactly the drift this file is for. Comparing the *distance* matters more
+// than comparing the answer: two implementations can agree on "matched" while
+// disagreeing about how close it was, and the second one is what changes next
+// time someone edits the boundary rule.
+const fuzzyProbe = [
+  ["what is dsh-review abotu?", "knowledge", 1],
+  ["what is dsh-review abuot?", "knowledge", 1],
+  ["what's dsh-review about?", "knowledge", 1],
+  ["which project use Kotlin?", "knowledge", 1],
+  ["what is the weather today?", "refuse", 0],
+  ["how many stars does dsh-review have?", "refuse", 0],
+  ["what is Finance-Management about?", "refuse", 0],
+  ["why is the sky blue?", "refuse", 0],
+];
+for (const [question, expected, distance] of fuzzyProbe) {
+  const answer = bot.ask(question, []);
+  const got = answer.source;
+  const gotDistance = answer.fuzzy || 0;
+  if (got !== expected || gotDistance !== distance) {
+    console.log(
+      `FAIL fuzzy ${JSON.stringify(question)}: expected ${expected}/d=${distance}, ` +
+      `got ${got}/d=${gotDistance}`,
+    );
+    failed += 1;
+  }
+}
+console.log(`fuzzy: ${fuzzyProbe.length - failed >= 0 ? fuzzyProbe.length : 0} typo questions agree`);
 console.log(`${probe.length} probe questions agree`);
 
 // Suggestions are computed in both engines from the same data, so they must
