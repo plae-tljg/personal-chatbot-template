@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 
 from personal_chatbots.store import Store
+from personal_chatbots.textnorm import tokenize
 from tests.support import BuiltCase
 
 
@@ -284,3 +285,39 @@ class SuggestionTest(BuiltCase):
 
     def test_at_most_three(self):
         self.assertLessEqual(len(self.runtime.ask("hello").suggestions), 3)
+
+
+class NearMissTest(BuiltCase):
+    """A question one word away from a row should name the row and the word.
+
+    "what accounts does LKM publish under" reached the model twice while
+    `owner.accounts` sat there reading "which accounts does {person} publish
+    under". The failure was silent, and the bot was even *suggesting* the correct
+    phrasing in its follow-ups -- it knew the answer and could not match the
+    question. Reporting the gap is the difference between a maintainer adding a
+    row and a maintainer widening one.
+    """
+
+    def test_a_one_word_gap_is_named(self):
+        found = self.runtime.near_misses(tokenize("which projects need Kotlin?"))
+        slugs = [slug for slug, _ in found]
+        self.assertIn("repo.by_language", slugs)
+        note = dict(found)["repo.by_language"]
+        self.assertIn("use", note)   # what the row says
+        self.assertIn("need", note)  # what was said
+
+    def test_a_matched_question_is_not_a_near_miss(self):
+        # it answers, so there is nothing to report
+        self.assertTrue(self.runtime.ask("which projects use Kotlin?").suggestions is not None)
+        found = self.runtime.near_misses(tokenize("which projects use Kotlin?"))
+        self.assertNotIn("repo.by_language", [slug for slug, _ in found])
+
+    def test_a_distant_question_reports_nothing(self):
+        # an unrelated question must not produce noise
+        self.assertEqual(self.runtime.near_misses(tokenize("do you do weddings?")), [])
+
+    def test_the_gap_this_repository_actually_hit_still_answers(self):
+        answer = self.runtime.ask("what accounts does LKM publish under")
+        self.assertEqual(answer.source, "knowledge")
+        self.assertEqual(answer.matched_slug, "owner.accounts")
+        self.assertFalse(answer.unresolved)

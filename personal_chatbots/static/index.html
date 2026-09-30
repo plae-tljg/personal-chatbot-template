@@ -363,6 +363,17 @@ async function submit(question) {
   }
 }
 
+/* Delegated, not per-button. submit() swaps the pending node for the real one
+   with replaceWith, so anything wired to the buttons at creation time is bound to
+   a node that is about to be discarded -- which is exactly why clicking a
+   suggestion did nothing. One listener on the container cannot be bypassed. */
+logEl.addEventListener('click', (ev) => {
+  const btn = ev.target && ev.target.closest && ev.target.closest('button[data-ask]');
+  if (!btn) return;
+  ev.preventDefault();
+  submit(btn.dataset.ask);
+});
+
 el('form').addEventListener('submit', ev => {
   ev.preventDefault();
   const value = el('q').value;

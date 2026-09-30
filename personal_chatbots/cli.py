@@ -22,6 +22,7 @@ from .config import Config, ConfigError
 from .content import ContentError
 from .engine import Runtime
 from .runner import run_tests
+from .textnorm import tokenize
 from .store import SCHEMA_VERSION, SchemaTooOld, Store
 from .vocabulary import VocabularyError
 
@@ -73,6 +74,10 @@ def cmd_ask(args: argparse.Namespace) -> int:
         runtime = Runtime.from_store(store, cfg)
         answer = runtime.ask_and_record(args.question, session_id=args.session)
         fallback_error = runtime.last_fallback_error
+        # Computed against the *original* question, before any reference rewrite,
+        # because that is the wording the visitor used and the wording a pattern
+        # would have to cover.
+        near = runtime.near_misses(tokenize(args.question)) if answer.unresolved else []
     print(answer.text)
     if not args.quiet:
         cites = ", ".join(c.key for c in answer.citations) or "-"
@@ -82,6 +87,10 @@ def cmd_ask(args: argparse.Namespace) -> int:
         print(f"  cites: {cites}")
         if answer.suggestions:
             print(f"  try:   {'  ·  '.join(answer.suggestions)}")
+        for slug, note in near:
+            print(f"  near:  {slug} — {note}")
+        if near:
+            print("         one word apart. That is a content fix, not a model fix.")
         if fallback_error and answer.source == "refuse":
             # Otherwise a broken key is indistinguishable from a model that had
             # nothing to say, which is exactly how this looked for an hour.
@@ -98,9 +107,18 @@ def cmd_inbox(args: argparse.Namespace) -> int:
     if not rows:
         print("inbox empty — nothing has been asked that the tables could not answer")
     else:
+        # Annotating each shape with its nearest row turns "add a row" into
+        # "widen this row", which is the cheaper and usually correct fix.
+        from .engine import Runtime
+        from .textnorm import tokenize
+
+        with Store(cfg.db_path) as store:
+            runtime = Runtime.from_store(store, cfg)
         print(f"{len(rows)} unanswered question shape(s):\n")
         for row in rows:
             print(f"  x{row['same_shape_count']:<3} {row['content']}")
+            for slug, note in runtime.near_misses(tokenize(row["content"]), limit=1):
+                print(f"       near {slug}: {note}")
     print(f"\nkappa {_pct(stats['kappa'])}  ·  {stats['answered']} answered, "
           f"{stats['refused']} refused, {stats['unresolved']} unresolved")
     return 0

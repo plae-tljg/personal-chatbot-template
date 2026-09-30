@@ -26,6 +26,12 @@
 - slug: owner.accounts
   patterns:
     - "which accounts does {person} publish under"
+    # "what" for "which" is the single most common one-word gap this bot has had.
+    # It reached the model twice before anyone noticed, because a pattern that
+    # does not match fails silently. `pc ask` and `pc inbox` now name the row and
+    # the word.
+    - "what accounts does {person} publish under"
+    - "what accounts does {person} have"
     - "how many github accounts do you have"
     - "where do you publish"
   slots: { person: person }
@@ -76,6 +82,8 @@
 - slug: repo.list
   patterns:
     - "what projects does {person} have"
+    - "what repos does {person} have"
+    - "what repositories does {person} have"
     - "list your work"
     - "what have you built"
   slots: { person: person }
@@ -102,6 +110,7 @@
 - slug: repo.by_language
   patterns:
     - "which projects use {language}"
+    - "what projects use {language}"
     - "what have you written in {language}"
   slots: { language: language }
   action:

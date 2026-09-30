@@ -441,6 +441,32 @@ class Runtime:
             else self.cfg.refuse_template
         return Answer(text=template, source="refuse", citations=[])
 
+    # -- near misses ----------------------------------------------------------
+    #
+    # A question that falls through to a model is a coverage gap, and the gap is
+    # usually one word: the row says "which accounts does {person} publish under"
+    # and the visitor says "what accounts does {person} publish under". Reported
+    # rather than guessed at -- silently loosening the match is how a row starts
+    # stealing questions, and the fix belongs in content where it can be reviewed.
+
+    def near_misses(self, tokens: list[str], limit: int = 3) -> list[tuple[str, str]]:
+        """Rows whose slots resolved but whose wording differs by a word or two."""
+        found: list[tuple[int, str, str]] = []
+        for row in self.rows:
+            resolved = resolve(tokens, row.slots, self.index)
+            if resolved is None:
+                continue
+            skeleton, _ = resolved
+            if skeleton in {normalize(p) for p in row.patterns}:
+                continue  # it did match; not a near miss
+            for pattern in row.patterns:
+                diff = _token_diff(skeleton, normalize(pattern))
+                if diff is not None:
+                    found.append((diff[0], row.slug, diff[1]))
+                    break
+        found.sort(key=lambda item: (item[0], item[1]))
+        return [(slug, note) for _, slug, note in found[:limit]]
+
     # -- follow-ups -----------------------------------------------------------
     #
     # "Better chatflow" at level 1 is not a state machine; it is telling the
@@ -588,6 +614,27 @@ class Runtime:
             refs=answer.refs,
         )
         return answer
+
+
+def _token_diff(said: str, pattern: str) -> tuple[int, str] | None:
+    """How far apart two skeletons are, or None if they are too far to be useful.
+
+    Only small differences count. A row that is four words away is not what the
+    visitor was reaching for, and reporting it would be noise.
+    """
+    a, b = said.split(), pattern.split()
+    if abs(len(a) - len(b)) > 1:
+        return None
+    pairs = [(x, y) for x, y in zip(a, b) if x != y]
+    tail = a[min(len(a), len(b)):] + b[min(len(a), len(b)):]
+    distance = len(pairs) + len(tail)
+    if distance == 0 or distance > 2:
+        return None
+    if pairs:
+        return distance, f"the row says {pairs[0][1]!r}, you said {pairs[0][0]!r}"
+    extra = tail[0]
+    side = "you added" if len(a) > len(b) else "the row has an extra"
+    return distance, f"{side} {extra!r}"
 
 
 #: Chain-of-thought wrappers seen in the wild, stripped before the visitor sees

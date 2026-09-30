@@ -50,9 +50,22 @@ const node = (tag = "div") => {
         dataset: { ask: m[1] }, addEventListener() {},
       }));
     },
-    addEventListener() {},
-    appendChild(child) { this.children.push(child); return child; },
-    replaceWith() {},
+    _handlers: {},
+    addEventListener(type, fn) {
+      (this._handlers[type] = this._handlers[type] || []).push(fn);
+    },
+    dispatch(type, event) {
+      // Bubble, like a real DOM. Pages differ on where they delegate from -- one
+      // listens on the log container, the other on the inner div -- and a stub
+      // that only fires the exact target would call a working page broken.
+      let node = this;
+      while (node) {
+        for (const fn of node._handlers[type] || []) fn(event);
+        node = node.parent;
+      }
+    },
+    appendChild(child) { child.parent = this; this.children.push(child); return child; },
+    replaceWith(node) { this.replacedWith = node; },
     remove() {},
     scrollIntoView() {},
     querySelector: () => null,
@@ -140,6 +153,8 @@ if (!widget || typeof widget.turnEl !== "function") {
 // the shapes a real answer takes
 // ---------------------------------------------------------------------------
 
+let failed_clicks = 0;
+
 const CASES = [
   ["a refusal", {
     text: "I don't have that.", source: "refuse", matched: "",
@@ -166,7 +181,57 @@ const CASES = [
   ["an empty answer", { text: "", source: "refuse", citations: [] }],
 ];
 
-let failed = 0;
+// ---------------------------------------------------------------------------
+// clicking a suggestion must actually ask it
+//
+// The first version of this harness only proved that a turn *renders*. The
+// buttons rendered fine and did nothing, because the listener was attached to a
+// node that `replaceWith` then discarded. Rendering is not wiring.
+// ---------------------------------------------------------------------------
+
+const asked = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, options) => {
+  if (String(url).includes("/api/ask")) {
+    asked.push(JSON.parse(options.body).question);
+    return {
+      ok: true, status: 200,
+      json: async () => ({
+        text: "ok", source: "knowledge", matched: "x", citations: [], refs: {},
+        unresolved: false, suggestions: [], latency_ms: 1,
+      }),
+    };
+  }
+  return realFetch(url, options);
+};
+
+const logEl = getEl("log");
+const innerEl = getEl("inner");
+logEl.appendChild(innerEl);          // so a click on inner bubbles to log
+innerEl.innerHTML = "";
+innerEl.appendChild(widget.turnEl("a question?", {
+  text: "an answer", source: "knowledge", matched: "x",
+  citations: [], refs: {}, unresolved: false,
+  suggestions: ["who is LKM", "what projects does LKM have"], latency_ms: 1,
+}, { live: true }));
+
+const fakeButton = { dataset: { ask: "who is LKM" }, closest: () => fakeButton };
+innerEl.dispatch("click", { target: fakeButton, preventDefault() {} });
+await new Promise((r) => setTimeout(r, 20));
+
+// The served chatroom asks its API; the static page answers in-process and
+// records the turn in localStorage. Both count as "the click did something".
+const inStorage = [...globalThis.localStorage._d.values()].some((v) => String(v).includes("who is LKM"));
+if (!asked.includes("who is LKM") && !inStorage) {
+  console.error("FAIL clicking a suggestion did nothing — the listener is missing or bound to a discarded node");
+  failed_clicks = 1;
+} else {
+  console.log(`clicking a suggestion asks it (${asked.length ? "api" : "in-process"})`);
+}
+
+globalThis.fetch = realFetch;
+
+let failed = failed_clicks || 0;
 for (const [label, answer] of CASES) {
   try {
     const el = widget.turnEl("why?", answer, { live: true });
