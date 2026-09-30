@@ -277,17 +277,22 @@ def ingest_sources(cfg: Config, *, offline: bool = False, cache_dir: Path | None
                 put(topic_entity(topic, origin))
             repos_for_readme.append((spec, origin))
 
-    # READMEs, most-starred first. A limit of 0 means all of them, which is only
-    # sane with a token: unauthenticated, 60 requests/hour is already spent by
-    # the account and repository listings.
+    # READMEs, most-starred first. One request each, so with no token the budget
+    # decides how many arrive: `readme_limit` is asked for and the API refuses
+    # the rest. Since every response is cached, rebuilding after the window
+    # resets fetches only what is still missing.
     repos_for_readme.sort(key=lambda pair: pair[0].attrs.get("stars", 0), reverse=True)
     limit = cfg.readme_limit
     selected = repos_for_readme if limit <= 0 else repos_for_readme[:limit]
     if limit and len(repos_for_readme) > limit:
+        why = (
+            f"set GITHUB_TOKEN (5000/hour) and rebuild to get all of them"
+            if not token
+            else f"raise build.readme_limit to cover the rest"
+        )
         result.notes.append(
-            f"fetched READMEs for {limit} of {len(repos_for_readme)} repositories "
-            f"(unauthenticated rate limit). Set GITHUB_TOKEN and rebuild to get all "
-            f"of them -- questions needing README text currently only work for those {limit}."
+            f"fetched READMEs for {limit} of {len(repos_for_readme)} repositories -- {why}. "
+            f"Questions needing README text only work for those {limit}."
         )
     for spec, origin in selected:
         owner, _, name = spec.key.partition("/")

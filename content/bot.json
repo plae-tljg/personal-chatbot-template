@@ -29,7 +29,7 @@
       ],
       "max_parts": 3
     },
-    "_ladder_note": "Rungs run in this order. 'fallback' is registered but NOT in the list: it is off by default, and adding it here is what turns it on. See docs/CONCERNS.md C1.",
+    "_ladder_note": "'fallback' sits in the list above, so it is ON in this repository -- a human decision, not a default. Remove it from runtime.ladder to turn it off. Deleting the string is safe because the rung checks `enabled` as well: two switches, and removing either one stops it. See docs/CONCERNS.md C1.",
     "fallback": {
       "_note": "Consulted only when every rung above refused. It answers the visitor; it does not close the gap -- the turn is still recorded as unresolved, because a model answering is not the same as the tables knowing. Any OpenAI-compatible endpoint works: Zen's free pool (default), https://api.deepseek.com/v1/chat/completions with DEEPSEEK_API_KEY, or a local Ollama at http://localhost:11434/v1/chat/completions. Run `pc doctor` to see whether the configured key is actually set.",
       "enabled": true,
@@ -50,6 +50,6 @@
     ],
     "readme_bytes": 8000,
     "readme_limit": "auto",
-    "_readme_note": "auto = 10 READMEs without a token (the unauthenticated API allows 60 requests/hour and the four account listings already use ~46), or all of them with GITHUB_TOKEN. Repositories whose README was not fetched have no searchable text, so questions needing it will refuse. `pc doctor` reports the shortfall."
+    "_readme_note": "auto = as many READMEs as the hourly request budget allows (60 unauthenticated, 5000 with GITHUB_TOKEN). Four accounts plus their repository listings plus 43 READMEs is 51 requests, so one build gets them all. On a cold cache the budget may run out mid-way; every response is cached, so a second build after the window resets fetches only the remainder. A repository whose README was not fetched has no searchable text, so questions needing it will refuse -- `pc doctor` reports the shortfall."
   }
 }

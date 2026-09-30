@@ -33,7 +33,12 @@ def _fail(message: str) -> int:
 
 
 def _prepare(args: argparse.Namespace) -> Config:
-    return Config.load(args.root)
+    # `--db` exists so a released database can be queried without a build:
+    #     pc --db dist/bot.db ask "what does dsh-review do?"
+    # Every command goes through here, so there is one place that decides which
+    # database "the database" means.
+    db = getattr(args, "db", None)
+    return Config.load(args.root, db_path=Path(db).resolve() if db else None)
 
 
 # ---------------------------------------------------------------------------
@@ -596,6 +601,115 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_release(args: argparse.Namespace) -> int:
+    """Write a database that is safe to publish.
+
+    The built database is two different things in one file: rows synced from
+    ``content/`` and public GitHub metadata, and ``messages``, which is what
+    visitors actually asked. The first is publishable and the second is other
+    people's questions. They are separated here by dropping the live tables
+    rather than by remembering not to share the file.
+
+    Schema stays identical, so a released file is a working database: point
+    ``pc --db dist/bot.db`` at it and every read command works, with no build
+    and no network.
+    """
+    import hashlib
+    import sqlite3
+
+    cfg = _prepare(args)
+    source = Path(cfg.db_path)
+    if not source.exists():
+        return _fail(f"{source} does not exist. Run `pc build` first.")
+
+    # Check the source before anything is copied. Writing the destination first
+    # and validating afterwards puts a file containing `messages` on disk even
+    # on the refusal path -- the release directory would briefly hold exactly
+    # what a release exists to exclude.
+    with Store(source) as origin:
+        origin.require_schema()
+        rows = {
+            "knowledge": origin.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"],
+            "entities": origin.conn.execute("SELECT COUNT(*) AS n FROM entities").fetchone()["n"],
+            "links": origin.conn.execute("SELECT COUNT(*) AS n FROM entity_links").fetchone()["n"],
+            "documents": origin.conn.execute("SELECT COUNT(*) AS n FROM documents").fetchone()["n"],
+        }
+
+    dest = Path(args.out)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # A file copy, not a re-export: the released database must be the same rows
+    # the tests passed against, byte for byte where it can be.
+    shutil.copyfile(source, dest)
+
+    live = ("messages", "flow_states", "tasks")  # the last two arrive at L2
+    dropped: list[str] = []
+    con = sqlite3.connect(dest)
+    try:
+        for table in live:
+            exists = con.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+            ).fetchone()
+            if not exists:
+                continue
+            # Counted before the drop, because the number is the point: it is
+            # how you know the release carries no conversations.
+            held = int(con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+            con.execute(f"DELETE FROM {table}")
+            dropped.append(f"{table} ({held} rows)")
+        # VACUUM cannot run inside a transaction, and the DELETEs opened one.
+        con.commit()
+        con.execute("VACUUM")  # the pages those rows occupied go back to the OS
+    finally:
+        con.close()
+
+    # Verify the artifact the way a consumer will use it, not the way it was made.
+    with Store(dest) as check:
+        check.require_schema()
+        leftover = check.conn.execute("SELECT COUNT(*) AS n FROM messages").fetchone()["n"]
+    if leftover:
+        return _fail(f"{dest} still holds {leftover} messages -- refusing to call this a release")
+
+    digest = hashlib.sha256(dest.read_bytes()).hexdigest()
+    size = dest.stat().st_size
+
+    if args.manifest:
+        manifest = Path(args.manifest)
+    else:
+        manifest = dest.with_suffix(dest.suffix + ".manifest.json")
+    manifest.write_text(
+        json.dumps(
+            {
+                "name": cfg.name,
+                "schema_version": SCHEMA_VERSION,
+                "level": cfg.level,
+                "ladder": cfg.ladder,
+                "rows": rows,
+                "live_tables_emptied": dropped,
+                "sha256": digest,
+                "bytes": size,
+                "contains": "public GitHub metadata and the content/ files of the repository",
+                "does_not_contain": "messages, sessions, or any visitor's questions",
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    print(f"released {dest}  ({size / 1024:.0f} KB)")
+    print(f"  knowledge  {rows['knowledge']} rows")
+    print(f"  entities   {rows['entities']}")
+    print(f"  links      {rows['links']}")
+    print(f"  documents  {rows['documents']}")
+    print(f"  emptied    {', '.join(dropped) if dropped else 'nothing (no live tables yet)'}")
+    print(f"  sha256     {digest[:16]}…")
+    print(f"  manifest   {manifest}")
+    print(f"  use it     pc --db {dest} ask \"what does dsh-review do?\"")
+    return 0
+
+
 def cmd_sessions(args: argparse.Namespace) -> int:
     cfg = _prepare(args)
     with Store(cfg.db_path) as store:
@@ -670,6 +784,7 @@ def _pct(value: float | None) -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="pc", description="personal-chatbots")
     parser.add_argument("--root", default=".", help="repo root (default: .)")
+    parser.add_argument("--db", default=None, help="database to read (default: <root>/data/bot.db)")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("build", help="sync content + GitHub into the database")
@@ -700,6 +815,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--bundle", default=None,
                    help="also write a copyable directory: data.json + engine.js + CONTRACT.md")
     p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("release", help="write a publishable database (live tables emptied)")
+    p.add_argument("out", nargs="?", default="dist/bot.db", help="default dist/bot.db")
+    p.add_argument("--manifest", default=None, help="default <out>.manifest.json")
+    p.set_defaults(func=cmd_release)
 
     p = sub.add_parser("sql", help="any read-only query against the database")
     p.add_argument("query", nargs="?", default="", help="a SELECT; omit to list the tables")

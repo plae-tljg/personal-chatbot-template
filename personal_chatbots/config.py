@@ -124,10 +124,16 @@ class Config:
     def readme_limit(self) -> int:
         """How many READMEs to fetch. 0 means all of them.
 
-        The unauthenticated GitHub API allows 60 requests/hour. Four accounts
-        plus their repositories is ~46 requests, which leaves room for about ten
-        READMEs -- so ten is the default and the other 32 repositories have no
-        searchable text at all.
+        The unauthenticated GitHub API allows 60 requests/hour, and one request
+        per README is most of the budget: four accounts, their repository
+        listings, and 43 READMEs is 51 requests. So `auto` asks for 60 and lets
+        the API be the limit rather than guessing a number that goes stale the
+        moment a repository is added.
+
+        Fetching is resumable because every response is cached: whatever the
+        budget did not cover is missing from the first build and present in the
+        second, with no bookkeeping. Cached responses do not spend the budget,
+        so a rebuild after the window resets picks up exactly the remainder.
 
         With GITHUB_TOKEN the limit is 5000/hour and the cap is pointless, so it
         lifts automatically rather than waiting for someone to edit config.
@@ -137,7 +143,7 @@ class Config:
             return int(configured)
         import os
 
-        return 0 if os.environ.get("GITHUB_TOKEN") else 10
+        return 0 if os.environ.get("GITHUB_TOKEN") else 60
 
     # -- paths -----------------------------------------------------------------
 

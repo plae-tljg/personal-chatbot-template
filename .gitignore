@@ -1,6 +1,9 @@
-# build artifacts -- both are reproducible from content/ + ingest
+# build artifacts -- all reproducible from content/ + ingest
 data/
 web/data.json
+# the published database: a distribution artifact, attached to a release, never
+# committed. `pc release` writes it, and the manifest beside it describes it.
+dist/
 
 # python
 __pycache__/
