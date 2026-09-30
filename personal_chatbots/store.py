@@ -136,16 +136,20 @@ class Store:
         # "SQLite objects created in a thread can only be used in that same
         # thread" -- intermittently, which is the worst way to find out.
         #
-        # Concurrent reads on one connection are serialized by SQLite itself;
-        # writes are serialized by _write_lock below.
-        self.conn = sqlite3.connect(str(self.path), check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA foreign_keys = ON")
-        # WAL lets readers proceed while a write is in flight; busy_timeout turns
-        # a lock collision into a short wait instead of an immediate error.
-        self.conn.execute("PRAGMA journal_mode = WAL")
-        self.conn.execute("PRAGMA busy_timeout = 5000")
-        self._write_lock = threading.RLock()
+        # But serializing writes alone is not enough. A sqlite3 connection is
+        # not a thread-safe object: two threads inside it at once can corrupt
+        # its statement state, and Python 3.12 reports that as
+        # "InterfaceError: bad parameter or other API misuse". It only ever
+        # showed up in CI on 3.12 -- 3.10 tolerated it -- and it would have
+        # appeared in production as a 500 under concurrent traffic.
+        #
+        # `_Connection` below holds one lock across every execute and commit,
+        # so reads are serialized too. SQLite itself would allow concurrent
+        # readers; the shared Python object will not, and correctness here is
+        # worth more than parallel reads at this size (one local file, ~0.2 ms
+        # a question, one process).
+        self._lock = threading.RLock()
+        self.conn = _Connection(self.path, self._lock)
 
     # -- lifecycle ------------------------------------------------------------
 
@@ -561,7 +565,7 @@ class Store:
         latency_ms: float,
         refs: dict[str, str] | None = None,
     ) -> int:
-        with self._write_lock:
+        with self._lock:
             return self._record_turn_locked(
                 session_id=session_id, question=question, normalized=normalized,
                 answer=answer, source=source, matched_slug=matched_slug,
@@ -630,7 +634,7 @@ class Store:
         stay explicable. A transcript is the visitor's own data, and being able
         to remove it is a feature, not a violation.
         """
-        with self._write_lock:
+        with self._lock:
             cursor = self.conn.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
             self.conn.commit()
             return cursor.rowcount
@@ -673,3 +677,74 @@ class Store:
             "kappa": (answered / total) if total else None,
             "unresolved": scalar("SELECT COUNT(*) FROM messages WHERE unresolved = 1"),
         }
+
+
+# ============================================================================
+# one connection, one lock
+# ============================================================================
+
+
+class _Connection:
+    """A sqlite3 connection that only one thread is ever inside.
+
+    ``sqlite3.Connection`` is not thread-safe as an object, even with
+    ``check_same_thread=False``: that flag removes Python's guard, it does not
+    add safety. Two threads calling ``execute`` on one connection can interleave
+    and raise ``InterfaceError: bad parameter or other API misuse``.
+
+    Rather than asking forty call sites to remember a lock, the lock is held
+    here, around every call that touches the connection. Call sites keep writing
+    ``store.conn.execute(...)`` and are correct by construction.
+
+    Subclassing was the other option and was rejected: ``sqlite3.Connection`` is
+    a C type whose methods cannot be overridden. Delegation is the only way to
+    make the lock unavoidable.
+    """
+
+    def __init__(self, path: Path, lock: threading.RLock):
+        self._lock = lock
+        self._real = sqlite3.connect(str(path), check_same_thread=False)
+        self._real.row_factory = sqlite3.Row
+        with self._lock:
+            self._real.execute("PRAGMA foreign_keys = ON")
+            # WAL lets readers proceed while a write is in flight; busy_timeout
+            # turns a lock collision into a short wait instead of an immediate
+            # error. Both matter because `pc serve` writes while it reads.
+            self._real.execute("PRAGMA journal_mode = WAL")
+            self._real.execute("PRAGMA busy_timeout = 5000")
+
+    @property
+    def row_factory(self):
+        return self._real.row_factory
+
+    @row_factory.setter
+    def row_factory(self, value):
+        self._real.row_factory = value
+
+    def execute(self, *args, **kwargs):
+        with self._lock:
+            return self._real.execute(*args, **kwargs)
+
+    def executemany(self, *args, **kwargs):
+        with self._lock:
+            return self._real.executemany(*args, **kwargs)
+
+    def executescript(self, *args, **kwargs):
+        with self._lock:
+            return self._real.executescript(*args, **kwargs)
+
+    def commit(self):
+        with self._lock:
+            return self._real.commit()
+
+    def rollback(self):
+        with self._lock:
+            return self._real.rollback()
+
+    def close(self) -> None:
+        with self._lock:
+            return self._real.close()
+
+    def backup(self, *args, **kwargs):
+        with self._lock:
+            return self._real.backup(*args, **kwargs)
