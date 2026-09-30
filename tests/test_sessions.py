@@ -219,36 +219,59 @@ class ConcurrencyTest(BuiltCase):
     """The serving path is not single-threaded.
 
     FastAPI runs sync endpoints in a worker pool, so a cached Store gets used
-    from whichever thread picks up the request. Before `check_same_thread=False`
-    plus a write lock, this failed intermittently with "SQLite objects created in
-    a thread can only be used in that same thread" -- which surfaced as a handful
-    of API tests erroring on maybe one run in ten.
+    from whichever thread picks up the request. This has now caught three
+    different bugs, each one invisible on a single thread:
+
+    1. "SQLite objects created in a thread can only be used in that same thread"
+       -- fixed with `check_same_thread=False`.
+    2. "InterfaceError: bad parameter or other API misuse" on 3.12, because
+       serializing writes still left concurrent reads inside one connection.
+    3. "IndexError: tuple index out of range" on 3.12, because
+       `execute(...).fetchone()` is two calls and the cursor it returns belongs
+       to the connection's *last* prepared statement -- another thread's
+       `execute` in between re-pointed it at a different query.
+
+    The mix below matters. Reading a single value, iterating a result set and
+    writing all exercise different lifetimes, and a fix for one of them left
+    the others broken.
     """
 
     def test_parallel_asks_and_reads(self):
         import threading
 
         errors: list[str] = []
+        threads_per_run = 16
 
         def worker(n: int) -> None:
             try:
-                for _ in range(4):
+                for i in range(6):
                     self.runtime.ask_and_record("what is dsh-review about?", session_id=f"c{n}")
-                    self.store.list_sessions(20)
+                    # reads whose cursor is fetched immediately
                     self.store.session(f"c{n}")
+                    self.store.entity_by_key("plae-tljg/dsh-review")
+                    self.store.stats()
+                    # reads that consume a whole result set, and iterate it
+                    self.store.list_sessions(20)
                     self.store.session_messages(f"c{n}")
+                    self.store.knowledge_coverage()
+                    self.store.unresolved_inbox(20)
+                    self.store.resolution_mix()
+                    # a write in the middle of all that reading
+                    if i % 3 == 0:
+                        self.store.delete_session(f"gone-{n}-{i}")
             except Exception as exc:  # noqa: BLE001 - the point is to catch anything
                 errors.append(f"{type(exc).__name__}: {exc}")
 
-        threads = [threading.Thread(target=worker, args=(i,)) for i in range(8)]
+        threads = [threading.Thread(target=worker, args=(i,)) for i in range(threads_per_run)]
         for thread in threads:
             thread.start()
         for thread in threads:
             thread.join()
 
         self.assertEqual(errors, [])
-        self.assertEqual(len(self.store.session_messages("c0")), 8)
+        self.assertEqual(len(self.store.session_messages("c0")), 12)
         self.assertEqual(
-            {row["session_id"] for row in self.store.list_sessions(50)} >= {f"c{i}" for i in range(8)},
+            {row["session_id"] for row in self.store.list_sessions(50)}
+            >= {f"c{i}" for i in range(threads_per_run)},
             True,
         )

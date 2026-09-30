@@ -692,9 +692,18 @@ class _Connection:
     add safety. Two threads calling ``execute`` on one connection can interleave
     and raise ``InterfaceError: bad parameter or other API misuse``.
 
-    Rather than asking forty call sites to remember a lock, the lock is held
-    here, around every call that touches the connection. Call sites keep writing
-    ``store.conn.execute(...)`` and are correct by construction.
+    Locking each call individually is *not* enough, which cost a second CI run
+    to learn. ``store.conn.execute(...).fetchone()`` is two separate calls, and
+    a cursor is backed by the connection's last prepared statement: if another
+    thread executes in between, the fetch runs against a statement belonging to
+    that other query and raises ``IndexError: tuple index out of range``.
+
+    So ``execute`` reads its rows *inside* the lock and returns them as a plain
+    list-like. No cursor outlives the call, and there is no gap for another
+    thread to reach into. That copies every result into memory, which is the
+    right trade here: the tables are small (a portfolio, not a warehouse), the
+    reads are sub-millisecond, and this makes correctness structural rather than
+    something forty call sites have to remember.
 
     Subclassing was the other option and was rejected: ``sqlite3.Connection`` is
     a C type whose methods cannot be overridden. Delegation is the only way to
@@ -723,7 +732,10 @@ class _Connection:
 
     def execute(self, *args, **kwargs):
         with self._lock:
-            return self._real.execute(*args, **kwargs)
+            cursor = self._real.execute(*args, **kwargs)
+            # Read everything now, while nothing else can touch the statement.
+            rows = cursor.fetchall() if cursor.description is not None else []
+            return _Rows(rows, cursor.rowcount, cursor.lastrowid)
 
     def executemany(self, *args, **kwargs):
         with self._lock:
@@ -748,3 +760,40 @@ class _Connection:
     def backup(self, *args, **kwargs):
         with self._lock:
             return self._real.backup(*args, **kwargs)
+
+
+class _Rows:
+    """The result of one ``execute``, already read.
+
+    Everything a call site uses -- iteration, ``fetchone``, ``fetchall``,
+    ``rowcount``, ``lastrowid`` -- and nothing that can reach back into the
+    connection. ``fetchone`` consumes the list the way a cursor would, so the
+    ~10 call sites that fetch once and the ~5 that iterate keep working
+    unchanged.
+    """
+
+    __slots__ = ("_rows", "_index", "rowcount", "lastrowid")
+
+    def __init__(self, rows: list, rowcount: int, lastrowid: int | None):
+        self._rows = rows
+        self._index = 0
+        self.rowcount = rowcount
+        self.lastrowid = lastrowid
+
+    def fetchone(self):
+        if self._index >= len(self._rows):
+            return None
+        row = self._rows[self._index]
+        self._index += 1
+        return row
+
+    def fetchall(self) -> list:
+        rest = self._rows[self._index:]
+        self._index = len(self._rows)
+        return rest
+
+    def __iter__(self):
+        return iter(self._rows)
+
+    def __len__(self) -> int:
+        return len(self._rows)
