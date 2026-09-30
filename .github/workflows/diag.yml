@@ -1,0 +1,21 @@
+name: diag
+
+# A workflow with no repository content in it. If this fails the way ci and
+# pages do, the problem is not in ci.yml, pages.yml, or the Python -- it is in
+# the account or repository settings, and no amount of editing these files
+# fixes it. Delete this file once that is settled.
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/diag.yml"]
+  workflow_dispatch:
+
+jobs:
+  can-a-runner-start:
+    runs-on: ubuntu-latest
+    steps:
+      - name: prove a runner exists
+        run: |
+          echo "runner started"
+          python3 --version
+          echo "ok"
