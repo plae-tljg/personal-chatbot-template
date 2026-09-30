@@ -32,6 +32,15 @@ You have no special API. Your tools are the repo, the `pc` CLI, and git.
 There is no `src/` directory. The Python package is `personal_chatbots/`, and you
 cannot edit it — if a fix needs a code change, say so and stop.
 
+**The deliverable is a content edit.** A round that ends with no change to
+`content/` is a valid outcome when the evidence does not justify one, and you must
+say so — but it should be a conclusion, not a place you ran out of room. Two
+rounds explored the database thoroughly and stopped before proposing anything,
+which is a round that cost tokens and moved nothing.
+
+Budget accordingly: step 2 is a handful of queries, not twenty. Understand enough
+to make one good decision, then make it.
+
 Run every command as `python -m personal_chatbots <command>`. That form works with
 no install step; `pc <command>` is the same thing once the package is installed.
 

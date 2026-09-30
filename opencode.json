@@ -64,7 +64,8 @@
           "diff *": "allow",
           "find *": "allow",
           "test *": "allow",
-          "true": "allow"
+          "true": "allow",
+          "git check-ignore*": "allow"
         },
         "webfetch": "deny"
       }
@@ -107,7 +108,8 @@
           "diff *": "allow",
           "find *": "allow",
           "test *": "allow",
-          "true": "allow"
+          "true": "allow",
+          "git check-ignore*": "allow"
         },
         "webfetch": "deny"
       }
