@@ -17,7 +17,17 @@ entities:
     name: LKM
     summary: "Builds offline-first tools, Android automation, and AI-maintained systems."
     url: https://github.com/plae-tljg
-    aliases: ["LKM", "lkm", "plaetljg", "plae tljg"]
+    # 站点地址放在实体上，不写进模板：换域名只改这一处，
+    # 而 knowledge.yaml 的 site.* 行只做插值。
+    attrs:
+      site: https://plae-tljg.github.io/
+      projects: https://plae-tljg.github.io/zh/projects/
+      writing: https://plae-tljg.github.io/zh/writing/
+      docs: https://plae-tljg.github.io/zh/docs/
+      licenses: "MIT for most of them; the MUSA voice ports keep their upstream AGPL/GPL licences, and several small repos have no licence file at all."
+    # "you" / "your" / 你 / 您 是同一个人的说法。没有这几个别名，
+    # "what is your website" 这类问句解析不出 {person}，整行就永远不会命中。
+    aliases: ["LKM", "lkm", "plaetljg", "plae tljg", "you", "your", "你", "您"]
 
   # 项目分组：GitHub API 里没有这个信息，是最值得让 AI 提的那类改动
   - type: project
@@ -40,6 +50,7 @@ entities:
 
   - type: topic
     key: topic:finance
+    attrs: { curated: 1 }
     name: Finance
     summary: "Money, budgeting and personal-finance tooling."
 
@@ -47,8 +58,29 @@ entities:
   # 成员是判断，不是抓取：每个仓库的描述都明确提到模型 / 训练 / transformer。
   - type: topic
     key: topic:machine-learning
+    attrs: { curated: 1 }
     name: Machine Learning
     summary: "Projects that port, train, or apply ML models: TTS and voice conversion, RAG, and transformers."
+
+  # 访客不会说 "kotlin" 或 "webview"，会说 "android"；也不会有 "automation" 这个
+  # topic —— GitHub 上都是 maa / fgo / frida 这类专名。下面三个 topic 补的是归类。
+  - type: topic
+    key: topic:android
+    attrs: { curated: 1 }
+    name: Android
+    summary: "Android apps and on-device automation, including the MaaFramework work."
+
+  - type: topic
+    key: topic:web
+    attrs: { curated: 1 }
+    name: Web
+    summary: "Small static sites and browser-side tools, including this site."
+
+  - type: topic
+    key: topic:automation
+    attrs: { curated: 1 }
+    name: Automation
+    summary: "Scripts and tools that drive something else: phones, cables, routers, terminals."
 
 # 覆盖 ingest 出来的字段。两边合并时这里的优先级更高，
 # 所以重新 ingest 不会覆盖掉人工/AI 的判断。
@@ -59,6 +91,20 @@ overrides:
   - key: plae-tljg
     type: account
     summary: "Primary account: the personal site, the DeepSeek Harness review plugin, and MaaFwPhoneAI."
+
+  # account.about 直接念 summary，而 ingest 给不出"这个账号是干什么的"。
+  # 没有这几句，"what is LKM-Repo?" 会答出一个只有名字的空壳。
+  - key: LKM-Repo
+    type: account
+    summary: "Organization for templates and experiments: the MUSA GPU ports, the domain-ops agent, and assorted AI experiments."
+
+  - key: plae-lkm
+    type: account
+    summary: "Smaller projects: joke pages, terminal and cable tools, and the Ubuntu setup manual."
+
+  - key: ellkaimu
+    type: account
+    summary: "Earlier, more finished Android apps: SSH and SFTP, anime downloads, image organising, and a collaborative editor."
 
   - key: "plae-tljg/plae-tljg"
     summary: "The GitHub profile README."
@@ -100,3 +146,80 @@ overrides:
 
   - key: "LKM-Repo/Transformer-Implementation-C-Python"
     add_links: [{ type: tagged, to: "topic:machine-learning" }]
+
+# Android 的成员：仓库描述里都明确写着 Android / Android app / Flutter Android。
+  - key: "plae-tljg/Finance-Management-App"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "plae-tljg/MaaFwPhoneAI"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "ellkaimu/Anime-Webview"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "ellkaimu/Image_Download_Organizer"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "ellkaimu/SSH-Management-App"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "ellkaimu/BiliDownload"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "ellkaimu/camera-link"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "ellkaimu/AmazeFileUtilities"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+  - key: "ellkaimu/FGA"
+    add_links: [{ type: tagged, to: "topic:android" }]
+
+
+# Web 的成员：静态站点与浏览器里跑的工具。
+  - key: "plae-tljg/plae-tljg.github.io"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+  - key: "LKM-Repo/AI_Plan_Cost_Web"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+  - key: "ellkaimu/Finance-Management-Web"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+  - key: "plae-lkm/Finance_Lux_Web"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+  - key: "plae-lkm/i_love_you_web"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+  - key: "plae-lkm/slow_life_web"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+  - key: "plae-lkm/yinyang_generator"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+  - key: "plae-lkm/Type_As_If_You_Are_Working"
+    add_links: [{ type: tagged, to: "topic:web" }]
+
+
+# Automation 的成员：都是"让别的东西动起来"的工具。
+  - key: "plae-tljg/MaaFwPhoneAI"
+    add_links: [{ type: tagged, to: "topic:automation" }]
+
+  - key: "ellkaimu/FGA"
+    add_links: [{ type: tagged, to: "topic:automation" }]
+
+  - key: "ellkaimu/maaMines"
+    add_links: [{ type: tagged, to: "topic:automation" }]
+
+  - key: "plae-lkm/Capture_Running_Terminal"
+    add_links: [{ type: tagged, to: "topic:automation" }]
+
+  - key: "plae-lkm/Match_Ethernet_Cable"
+    add_links: [{ type: tagged, to: "topic:automation" }]
+
+  - key: "plae-lkm/Restart-Router"
+    add_links: [{ type: tagged, to: "topic:automation" }]
+
+  - key: "plae-lkm/Flush_Youtube_Account"
+    add_links: [{ type: tagged, to: "topic:automation" }]

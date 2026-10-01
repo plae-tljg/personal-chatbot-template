@@ -175,3 +175,152 @@
   question: "why is the sky blue?"
   expect:
     refuses: true
+
+# ===========================================================================
+# 2026-10-01 — 扩充：站点入口、bot 自述、时间/许可/语言/方向、代码地址。
+# 每条都对应 knowledge.yaml 里新增或修好的一行。
+# ===========================================================================
+
+# ---- site.*：地址挂在 person 的 attrs 上，模板只插值 ----
+- slug: site.home.en
+  question: "what is your website?"
+  expect:
+    source: knowledge
+    answer_contains: ["plae-tljg.github.io"]
+
+- slug: site.home.zh
+  question: "你的网站是什么"
+  expect:
+    source: knowledge
+    answer_contains: ["plae-tljg.github.io"]
+
+- slug: site.projects.zh
+  question: "你的项目在哪看"
+  expect:
+    source: knowledge
+    answer_contains: ["projects"]
+
+# ---- you/your/你/您 解析到 person：这几条以前整行都命中不了 ----
+# 行的 patterns 里有 {person}，而"your"解析不出来，槽位就失败，整行静默不命中。
+- slug: repo.list.you-alias
+  question: "what have you built?"
+  expect:
+    source: knowledge
+    answer_contains: ["Finance-Management-App"]
+
+- slug: owner.accounts.you-alias
+  question: "where do you publish?"
+  expect:
+    source: knowledge
+    resolves: { person: "plae-tljg" }
+
+- slug: contact.you-alias
+  question: "how do i reach you?"
+  expect:
+    source: knowledge
+    resolves: { person: "plae-tljg" }
+
+- slug: repo.list.zh-you-alias
+  question: "你有哪些项目"
+  expect:
+    source: knowledge
+    answer_contains: ["Finance-Management-App"]
+
+# ---- bot 自述：不依赖任何实体的问题，也要有确定答案 ----
+- slug: bot.intro.en
+  question: "who are you?"
+  expect:
+    source: knowledge
+
+- slug: bot.intro.zh
+  question: "你是谁"
+  expect:
+    source: knowledge
+
+- slug: bot.how.zh
+  question: "这个机器人怎么工作的"
+  expect:
+    source: knowledge
+    answer_contains: ["SQLite"]   # 答案是英文的：见 CONCERNS C9
+
+- slug: bot.language.zh
+  question: "你会中文吗"
+  expect:
+    source: knowledge
+
+# ---- 新形状：时间 / 许可 / 语言清单 / 方向清单 / 代码地址 ----
+- slug: repo.newest.en
+  question: "what are you working on now?"
+  expect:
+    source: knowledge
+    answer_contains: ["plae-tljg.github.io"]
+
+- slug: repo.newest.zh
+  question: "最近在做什么"
+  expect:
+    source: knowledge
+
+- slug: license.policy.en
+  question: "can i use your code?"
+  expect:
+    source: knowledge
+    answer_contains: ["MIT"]
+
+- slug: license.policy.zh
+  question: "你的项目是什么许可"
+  expect:
+    source: knowledge
+    answer_contains: ["MIT"]
+
+- slug: language.list.zh
+  question: "你会哪些编程语言"
+  expect:
+    source: knowledge
+    answer_contains: ["Python"]
+
+- slug: topic.list.curated-first
+  question: "你做什么方向"
+  expect:
+    source: knowledge
+    answer_contains: ["Android"]   # curation 的 topic 排在自动 topic 前面
+
+- slug: repo.url.en
+  question: "where is the code for dsh-review?"
+  expect:
+    source: knowledge
+    resolves: { repo: "plae-tljg/dsh-review" }
+    answer_contains: ["github.com/plae-tljg/dsh-review"]
+
+- slug: repo.url.zh
+  question: "给我 dsh-review 的链接"
+  expect:
+    source: knowledge
+    answer_contains: ["github.com/plae-tljg/dsh-review"]
+
+- slug: account.about.en
+  question: "what is LKM-Repo?"
+  expect:
+    source: knowledge
+    answer_contains: ["Organization"]
+
+- slug: account.about.ellkaimu
+  question: "what is ellkaimu?"
+  expect:
+    source: knowledge
+    answer_contains: ["Android"]
+
+# ---- 易混负例：新的宽入口不能抢已有行的问题 ----
+# site.home 的 patterns 里有 {person}，所以 "what is your most starred repo"
+# 这类没有人物的问题不该被它接走（repo.ranked 才是它的行）。
+- slug: confusable.site-vs-ranked
+  question: "what is your most starred repo?"
+  expect:
+    source: knowledge
+    answer_contains: ["Finance-Management-App"]
+
+# bot.intro 是字面 pattern；带 {person} 的行不该抢 "who are you?"。
+- slug: confusable.bot-intro-vs-owner
+  question: "who are you?"
+  expect:
+    source: knowledge
+    answer_contains: ["bot"]

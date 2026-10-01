@@ -50,6 +50,17 @@ class AliasTest(unittest.TestCase):
         # short need a curation alias instead -- that is a documented limitation.
         self.assertEqual(aliases_for("C"), [])
 
+    def test_cjk_alias_survives_the_length_rule(self):
+        # One CJK character is a word, not half an abbreviation: 你 / 您 have to
+        # survive, or every "你的…" question fails to resolve the person slot.
+        aliases = aliases_for("LKM", "plae-tljg", extra=["你", "您"])
+        self.assertIn("你", aliases)
+        self.assertIn("您", aliases)
+
+    def test_ascii_alias_still_obeys_the_length_rule(self):
+        aliases = aliases_for("LKM", "plae-tljg", extra=["ab"])
+        self.assertNotIn("ab", aliases)
+
     def test_aliases_are_deduplicated(self):
         aliases = aliases_for("Finance-Management-App", "plae-tljg/Finance-Management-App")
         self.assertEqual(len(aliases), len(set(aliases)))

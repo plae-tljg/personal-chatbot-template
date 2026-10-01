@@ -11,10 +11,15 @@ runs while serving** unless you add one.
 > first. It is a reference to clone and read, not a GitHub template.
 
 **Status: v1 runs.** 43 repositories across four GitHub identities, 176 entities,
-251 links, a README for every repository, 11 knowledge rows that answer from all
-of it, 25 seeded cases, 149 unit + invariant tests, and a browser engine that CI
+263 links, a README for every repository, 24 knowledge rows that answer from all
+of it, 48 frozen cases, 151 unit + invariant tests, and a browser engine that CI
 checks agrees with the Python one. Answers land in 0.1–1 ms at zero tokens, and a
 misspelling still reaches the tables rather than the model.
+
+Every row carries phrasings in **Chinese and English** — `normalize()` splits CJK
+per character, so "你的网站是什么" and "what is your website" land on the same row.
+Answers are written once, in English (see `docs/CONCERNS.md` C9: `knowledge.locale`
+is a deployment-level switch, not a per-question one).
 
 ## Quickstart
 
@@ -37,8 +42,8 @@ python -m personal_chatbots ask "how much does LKM charge?"
 python -m personal_chatbots inbox          # ...and there it is
 
 # 4. run the checks
-python -m personal_chatbots test           # the 8 frozen cases
-python -m unittest discover -s tests -t .  # 102 unit + invariant tests
+python -m personal_chatbots test           # the 48 frozen cases
+python -m unittest discover -s tests -t .  # 151 unit + invariant tests
 
 # 5. open the chatroom
 python -m personal_chatbots serve          # http://127.0.0.1:8080

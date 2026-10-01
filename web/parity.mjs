@@ -84,7 +84,12 @@ console.log(`${probe.length} probe questions agree`);
 // offering a dead end.
 const suggested = [
   ["what is dsh-review about?", "who made dsh-review"],
-  ["do you do weddings?", "what is your most starred repo"],
+  // This used to be "what is your most starred repo" (a slot-free row). Since
+  // "you"/"your" became aliases of the person, a question containing "you"
+  // resolves a person slot, so the answerable rows offered here are the person
+  // ones. The assertion under test is unchanged: both engines agree, and every
+  // suggestion answers.
+  ["do you do weddings?", "who is LKM"],
   ["what projects does LKM have?", "who is LKM"],
 ];
 let suggestionFails = 0;

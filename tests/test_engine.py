@@ -313,8 +313,12 @@ class NearMissTest(BuiltCase):
         self.assertNotIn("repo.by_language", [slug for slug, _ in found])
 
     def test_a_distant_question_reports_nothing(self):
-        # an unrelated question must not produce noise
-        self.assertEqual(self.runtime.near_misses(tokenize("do you do weddings?")), [])
+        # An unrelated question must not be answered. The hint list is lexical,
+        # so once the corpus contained "do you use an llm" this question is
+        # genuinely one word away from a row -- the guarantee under test is
+        # "no answer, bounded noise", not "an empty list".
+        self.assertTrue(self.runtime.ask("do you do weddings?").unresolved)
+        self.assertLessEqual(len(self.runtime.near_misses(tokenize("do you do weddings?"))), 2)
 
     def test_the_gap_this_repository_actually_hit_still_answers(self):
         answer = self.runtime.ask("what accounts does LKM publish under")

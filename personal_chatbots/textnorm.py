@@ -77,7 +77,9 @@ def aliases_for(name: str, key: str = "", extra: list[str] | None = None) -> lis
     people who drop the separators.
 
     Aliases shorter than three characters after compaction are dropped: a
-    two-letter alias matches half the corpus.
+    two-letter alias matches half the corpus. CJK is exempt from that rule,
+    because one character is already a word here -- 你 is "you", not half an
+    abbreviation, and it is how "你的网站是什么" reaches the person slot.
     """
     candidates: list[str] = []
 
@@ -96,7 +98,7 @@ def aliases_for(name: str, key: str = "", extra: list[str] | None = None) -> lis
         normalized = normalize(candidate)
         if not normalized:
             continue
-        if len(compact(normalized)) < 3:
+        if len(compact(normalized)) < 3 and not _CJK.search(normalized):
             continue
         if normalized not in out:
             out.append(normalized)
